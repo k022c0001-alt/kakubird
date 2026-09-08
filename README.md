@@ -1,4 +1,4 @@
-
+2026年　9月　テスト
 handler.py、orchstrator.py、blocks.jsx、frontend/src/components/AiChatMessageList.jsx（表示担当）を基本的にAIに見せたり、作ったりしてもらうこと
 
  ## サードパーティライセンス
