@@ -14,3 +14,7 @@ handler.py、orchstrator.py、blocks.jsx、frontend/src/components/AiChatMessage
 
 This project is licensed under the MIT License, see the 
 
+
+## Copilot write-access test
+
+This line confirms the Copilot coding flow can update this fork safely.
