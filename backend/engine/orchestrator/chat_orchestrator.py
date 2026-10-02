@@ -52,7 +52,14 @@ from api.services.handlers.code.Decompositionhandler import DecompositionHandler
 from api.services.handlers.Github_guide_handler import GithubGuideHandler
 from api.services.handlers.LineFormatHandler import LineFormatHandler
 from api.services.handlers.perserhandler import ParserHandler
-from api.services.handlers.Math_Handler import MathHandler
+from api.services.handlers.stock_research import StockResearchHandler
+
+try:
+    from api.services.handlers.Math_Handler import MathHandler
+except ModuleNotFoundError as e:
+    if e.name != "api.services.handlers.Math_Handler":
+        raise
+    MathHandler = None
 
 # ============================================================
 # ProjectBuilderHandlerだけは安全にimportする
@@ -461,8 +468,13 @@ class ChatOrchestrator(BaseOrchestrator):
         # Handlers
         # ====================================================
 
-        self.handlers = [
-            MathHandler(),
+        self.handlers = []
+
+        if MathHandler is not None:
+            self.handlers.append(MathHandler())
+
+        self.handlers.extend([
+            StockResearchHandler(),
             KnowledgeReloadHandler(
                 reload_callback=self._reload_knowledge_system,
             ),
@@ -471,7 +483,7 @@ class ChatOrchestrator(BaseOrchestrator):
             GithubGuideHandler(),
             APICollectHandler(),
             RepomixHandler(),
-        ]
+        ])
 
         # ----------------------------------------------------
         # ProjectBuilderHandler
