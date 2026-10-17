@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useAiChat } from '../hooks/useAiChat';
 import AiChatHeader from './AiChatHeader';
@@ -8,46 +7,72 @@ import MemoryDrawer from './MemoryDrawer';
 import ZipUploadModal from './ZipUploadModal';
 import ManualEditModal from './ManualEditModal';
 
-/*
-  AiChatPanel.jsx (改良版)
+// VS Code Webview 用の Window 拡張定義
+declare global {
+  interface Window {
+    acquireVsCodeApi?: () => {
+      postMessage: (message: any) => void;
+      setState: (state: any) => void;
+      getState: () => any;
+    };
+  }
+}
 
-  目的:
-   - クリップボードやアップロードされたスクリーンショットを「保存 (extension or fallback)」できるようにする
-   - 保存 API を統一する saveScreenshot / saveMemory を用意
-   - MemoryDrawer にスクリーンショットと各種メモリを渡す
-   - 拡張が無い場合は localStorage にフォールバックして動作する
+// 型定義
+export interface Screenshot {
+  id: string;
+  filename?: string;
+  uri?: string | null;
+  mime?: string;
+  createdAt?: string;
+  dataUrl?: string;
+  pending?: boolean;
+}
 
-  拡張側に実装して欲しいハンドラ:
-   - saveScreenshot: { command: 'saveScreenshot', filename, data (base64), mime, tempId }
-     → extension はファイル保存 → webview.postMessage({ command:'screenshotSaved', metadata, tempId })
-   - deleteScreenshot: { command: 'deleteScreenshot', id }
-   - saveMemory: { command: 'saveMemory', type, payload, tempId }
-     → extension は永続化 → webview.postMessage({ command:'memorySaved', type, metadata, tempId })
-   - requestIndex: { command: 'requestIndex' } → extension は既存 index を送る: screenshotIndex / memoryIndex
-*/
+export type MemoryType = 'project' | 'rule' | 'knowledge' | 'experience' | 'template' | 'vector';
 
-export default function AiChatPanel({ onImportDB, onCreateDB, onOpenManualEdit }) {
+export interface MemoryItem {
+  id?: string;
+  payload?: any;
+  pending?: boolean;
+  createdAt?: string;
+}
+
+export type MemoriesState = Record<MemoryType, MemoryItem | null>;
+
+export interface AiChatPanelProps {
+  onImportDB?: (db: any) => void;
+  onCreateDB?: () => void;
+  onOpenManualEdit?: (block: any) => void;
+}
+
+export default function AiChatPanel({
+  onImportDB,
+  onCreateDB,
+  onOpenManualEdit,
+}: AiChatPanelProps) {
   // ---- UI states ----
-  const [panelWidth, setPanelWidth] = useState('normal');
-  const [isMemoryOpen, setIsMemoryOpen] = useState(false);
-  const [isPastingImage, setIsPastingImage] = useState(false);
-  const [zipModalState, setZipModalState] = useState({ isOpen: false, file: null });
+  const [panelWidth, setPanelWidth] = useState<'normal' | 'wide'>('normal');
+  const [isMemoryOpen, setIsMemoryOpen] = useState<boolean>(false);
+  const [isPastingImage, setIsPastingImage] = useState<boolean>(false);
+  const [zipModalState, setZipModalState] = useState<{ isOpen: boolean; file: File | null }>({
+    isOpen: false,
+    file: null,
+  });
 
-  // screenshots: { id, filename, uri, mime, createdAt, dataUrl?, pending? }
-  const [screenshots, setScreenshots] = useState([]);
-  // memories: store small maps for each memory type
-  const [memories, setMemories] = useState({
+  const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
+  const [memories, setMemories] = useState<MemoriesState>({
     project: null,
     rule: null,
     knowledge: null,
     experience: null,
     template: null,
-    vector: null
+    vector: null,
   });
 
-  const savingIdsRef = useRef(new Set());
+  const savingIdsRef = useRef<Set<string>>(new Set());
 
-  // VS Code API (if running in webview)
+  // VS Code API
   const vscode = typeof window !== 'undefined' && window.acquireVsCodeApi ? window.acquireVsCodeApi() : null;
 
   // Ai Chat hook
@@ -61,11 +86,11 @@ export default function AiChatPanel({ onImportDB, onCreateDB, onOpenManualEdit }
     isRagMode,
     setIsRagMode,
     forceJsonMode,
-    setForceJsonMode
+    setForceJsonMode,
   } = useAiChat({ onImportDB });
 
-  // Utility: write memory to fallback storage (localStorage) when no extension present
-  const fallbackSaveMemory = (type, payload) => {
+  // Utility: write memory to fallback storage
+  const fallbackSaveMemory = (type: MemoryType, payload: any) => {
     try {
       const key = `ai_mem_${type}`;
       localStorage.setItem(key, JSON.stringify({ payload, updatedAt: new Date().toISOString() }));
@@ -76,73 +101,72 @@ export default function AiChatPanel({ onImportDB, onCreateDB, onOpenManualEdit }
     }
   };
 
-  // Unified memory save — posts to extension or localStorage
-  const saveMemory = async (type, payload) => {
-    // optimistic id
-    const tempId = `mem-temp-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
-    // update UI immediately
-    setMemories((prev) => ({ ...prev, [type]: { id: tempId, payload, pending: true, createdAt: new Date().toISOString() } }));
+  // Unified memory save
+  const saveMemory = async (type: MemoryType, payload: any) => {
+    const tempId = `mem-temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    setMemories((prev) => ({
+      ...prev,
+      [type]: { id: tempId, payload, pending: true, createdAt: new Date().toISOString() },
+    }));
 
     if (vscode) {
       vscode.postMessage({ command: 'saveMemory', type, payload, tempId });
       return;
     }
 
-    // fallback
     const meta = fallbackSaveMemory(type, payload);
     if (meta) {
-      setMemories((prev) => ({ ...prev, [type]: { id: meta.id, payload, pending: false, createdAt: meta.savedAt } }));
+      setMemories((prev) => ({
+        ...prev,
+        [type]: { id: meta.id, payload, pending: false, createdAt: meta.savedAt },
+      }));
       addSystemMessage(`ローカルに ${type} メモリを保存しました`);
     } else {
       addSystemMessage(`メモリ保存に失敗しました (${type})`);
     }
   };
 
-  // Unified screenshot save (extension preferred)
-  const saveScreenshotToExtension = async (file) => {
+  // Unified screenshot save
+  const saveScreenshotToExtension = async (file: File) => {
     if (!file) return;
-    const tempId = `shot-temp-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+    const tempId = `shot-temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const filename = file.name || `screenshot-${Date.now()}.png`;
 
-    // create dataUrl immediately for optimistic UI
-    const dataUrl = await new Promise((res, rej) => {
+    const dataUrl = await new Promise<string>((res, rej) => {
       const reader = new FileReader();
-      reader.onload = () => res(reader.result);
+      reader.onload = () => res(reader.result as string);
       reader.onerror = rej;
       reader.readAsDataURL(file);
     });
 
-    const optimistic = {
+    const optimistic: Screenshot = {
       id: tempId,
       filename,
       uri: null,
       mime: file.type || 'image/png',
       createdAt: new Date().toISOString(),
       dataUrl,
-      pending: true
+      pending: true,
     };
     setScreenshots((prev) => [optimistic, ...prev]);
     savingIdsRef.current.add(tempId);
 
     if (vscode) {
-      // send base64 to extension
       const base64 = dataUrl.split(',')[1];
       vscode.postMessage({ command: 'saveScreenshot', filename, data: base64, mime: file.type || 'image/png', tempId });
       return;
     }
 
-    // fallback: store to localStorage as dataUrl (not ideal for large images, but ok for prototype)
     try {
       const key = `ai_screenshot_${tempId}`;
       localStorage.setItem(key, dataUrl);
-      // create metadata and update list
       const meta = { id: `local-${tempId}`, filename, uri: key, mime: file.type || 'image/png', createdAt: new Date().toISOString() };
-      setScreenshots((prev) => prev.map(s => s.id === tempId ? { ...s, ...meta, dataUrl, pending: false } : s));
+      setScreenshots((prev) => prev.map((s) => (s.id === tempId ? { ...s, ...meta, dataUrl, pending: false } : s)));
       savingIdsRef.current.delete(tempId);
       addSystemMessage(`スクリーンショットをローカルに保存しました: ${filename}`);
     } catch (e) {
       console.error('fallback screenshot save failed', e);
-      setScreenshots((prev) => prev.filter(s => s.id !== tempId));
+      setScreenshots((prev) => prev.filter((s) => s.id !== tempId));
       savingIdsRef.current.delete(tempId);
       addSystemMessage('スクリーンショット保存に失敗しました（ローカル）');
     }
@@ -150,7 +174,7 @@ export default function AiChatPanel({ onImportDB, onCreateDB, onOpenManualEdit }
 
   // Handle messages from extension
   useEffect(() => {
-    const handleMessage = (ev) => {
+    const handleMessage = (ev: MessageEvent) => {
       const msg = ev.data;
       if (!msg || !msg.command) return;
 
@@ -158,44 +182,40 @@ export default function AiChatPanel({ onImportDB, onCreateDB, onOpenManualEdit }
         const metadata = msg.metadata || {};
         const { tempId } = msg;
         setScreenshots((prev) => {
-          // replace temp item if exists
           if (tempId) {
-            return prev.map(s => s.id === tempId ? { ...s, ...metadata, pending: false } : s);
+            return prev.map((s) => (s.id === tempId ? { ...s, ...metadata, pending: false } : s));
           }
-          // otherwise ensure it's added uniquely
-          const exists = prev.find(s => s.id === metadata.id || s.uri === metadata.uri);
-          if (exists) return prev.map(s => s.id === exists.id ? { ...s, ...metadata, pending: false } : s);
+          const exists = prev.find((s) => s.id === metadata.id || s.uri === metadata.uri);
+          if (exists) return prev.map((s) => (s.id === exists.id ? { ...s, ...metadata, pending: false } : s));
           return [{ ...metadata, pending: false }, ...prev];
         });
         if (tempId) savingIdsRef.current.delete(tempId);
         addSystemMessage(`スクリーンショットを保存しました: ${metadata.filename || metadata.uri}`);
       } else if (msg.command === 'screenshotSaveFailed') {
         const { tempId, error } = msg;
-        setScreenshots((prev) => prev.filter(s => s.id !== tempId));
+        setScreenshots((prev) => prev.filter((s) => s.id !== tempId));
         if (tempId) savingIdsRef.current.delete(tempId);
         addSystemMessage(`スクリーンショット保存失敗: ${error}`);
       } else if (msg.command === 'memorySaved') {
-        const { type, metadata, tempId } = msg;
+        const { type, metadata } = msg as { type: MemoryType; metadata: any };
         setMemories((prev) => ({ ...prev, [type]: { ...(prev[type] || {}), ...metadata, pending: false } }));
         addSystemMessage(`${type} メモリを保存しました`);
       } else if (msg.command === 'memorySaveFailed') {
-        const { type, tempId, error } = msg;
-        // revert pending flag
+        const { type, error } = msg as { type: MemoryType; error: string };
         setMemories((prev) => ({ ...prev, [type]: { ...(prev[type] || {}), pending: false } }));
         addSystemMessage(`${type} メモリの保存に失敗しました: ${error}`);
       } else if (msg.command === 'screenshotIndex') {
-        // list of existing screenshots from extension
         const list = Array.isArray(msg.list) ? msg.list : [];
-        const normalized = list.map(it => ({
+        const normalized: Screenshot[] = list.map((it: any) => ({
           id: it.id || it.uri || `${it.filename}-${it.createdAt}`,
           filename: it.filename,
           uri: it.uri,
           mime: it.mime || 'image/png',
-          createdAt: it.createdAt || new Date().toISOString()
+          createdAt: it.createdAt || new Date().toISOString(),
         }));
         setScreenshots((prev) => {
-          const ids = new Set(prev.map(p => p.id));
-          const newItems = normalized.filter(n => !ids.has(n.id));
+          const ids = new Set(prev.map((p) => p.id));
+          const newItems = normalized.filter((n) => !ids.has(n.id));
           return [...newItems, ...prev];
         });
       } else if (msg.command === 'memoryIndex') {
@@ -203,16 +223,15 @@ export default function AiChatPanel({ onImportDB, onCreateDB, onOpenManualEdit }
         setMemories((prev) => ({ ...prev, ...map }));
       }
     };
+
     window.addEventListener('message', handleMessage);
-    // request index when mounted (ask extension to send existing data)
     if (vscode) {
-      try { vscode.postMessage({ command: 'requestIndex' }); } catch (e) { /* ignore */ }
+      try { vscode.postMessage({ command: 'requestIndex' }); } catch (e) {}
     } else {
-      // load fallback memories from localStorage
       const loadFallback = () => {
-        const keys = ['project', 'rule', 'knowledge', 'experience', 'template', 'vector'];
-        const map = {};
-        keys.forEach(k => {
+        const keys: MemoryType[] = ['project', 'rule', 'knowledge', 'experience', 'template', 'vector'];
+        const map: Partial<MemoriesState> = {};
+        keys.forEach((k) => {
           const v = localStorage.getItem(`ai_mem_${k}`);
           if (v) {
             try { map[k] = JSON.parse(v).payload; } catch (e) { map[k] = null; }
@@ -223,16 +242,15 @@ export default function AiChatPanel({ onImportDB, onCreateDB, onOpenManualEdit }
       loadFallback();
     }
     return () => window.removeEventListener('message', handleMessage);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Paste handling
   useEffect(() => {
-    let timeoutId;
-    const handleGlobalPaste = (e) => {
+    let timeoutId: NodeJS.Timeout;
+    const handleGlobalPaste = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
       if (!items) return;
-      const imageItem = Array.from(items).find(item => item.type && item.type.startsWith('image/'));
+      const imageItem = Array.from(items).find((item) => item.type && item.type.startsWith('image/'));
       if (imageItem) {
         e.preventDefault();
         const file = imageItem.getAsFile();
@@ -243,11 +261,9 @@ export default function AiChatPanel({ onImportDB, onCreateDB, onOpenManualEdit }
         timeoutId = setTimeout(() => setIsPastingImage(false), 2000);
 
         setIsMemoryOpen(true);
-        // optimistic save + send to extension or fallback
         saveScreenshotToExtension(file);
-        // also route to OCR/chat processing if desired
         if (sendImage) {
-          sendImage(file).catch(err => console.warn('sendImage error', err));
+          sendImage(file).catch((err) => console.warn('sendImage error', err));
         }
       }
     };
@@ -256,44 +272,38 @@ export default function AiChatPanel({ onImportDB, onCreateDB, onOpenManualEdit }
       window.removeEventListener('paste', handleGlobalPaste);
       if (timeoutId) clearTimeout(timeoutId);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sendImage]);
 
-  // Handler: delete screenshot (request extension)
-  const handleDeleteScreenshot = (shotId) => {
+  // Handler: delete screenshot
+  const handleDeleteScreenshot = (shotId: string) => {
     if (!shotId) return;
-    // optimistic removal
-    setScreenshots((prev) => prev.filter(s => s.id !== shotId));
+    setScreenshots((prev) => prev.filter((s) => s.id !== shotId));
     if (vscode) {
       vscode.postMessage({ command: 'deleteScreenshot', id: shotId });
     } else {
-      // fallback: remove localStorage key if used
       const key = shotId.startsWith('local-') ? shotId.replace('local-', '') : shotId;
       try { localStorage.removeItem(key); } catch (e) {}
     }
   };
 
-  // Handler: use screenshot (send to chat or copy uri)
-  const handleUseScreenshot = (shot) => {
+  // Handler: use screenshot
+  const handleUseScreenshot = (shot: Screenshot) => {
     if (!shot) return;
-    // If has dataUrl -> convert to File and send to sendImage for OCR/解析
     if (shot.dataUrl) {
       const file = dataURLToFile(shot.dataUrl, shot.filename || 'screenshot.png');
-      if (sendImage) sendImage(file).catch(e => console.warn(e));
+      if (sendImage) sendImage(file).catch((e) => console.warn(e));
       addSystemMessage('スクリーンショットを解析に送信しました');
       return;
     }
-    // If has uri and running in webview, copy uri to clipboard
     if (shot.uri) {
       navigator.clipboard.writeText(shot.uri);
       addSystemMessage('スクリーンショット URI をクリップボードにコピーしました');
     }
   };
 
-  // convert dataURL to File
-  const dataURLToFile = (dataurl, filename) => {
+  const dataURLToFile = (dataurl: string, filename: string): File => {
     const arr = dataurl.split(',');
-    const mime = arr[0].match(/:(.*?);/)[1];
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
     const bstr = atob(arr[1]);
     let n = bstr.length;
     const u8arr = new Uint8Array(n);
@@ -301,24 +311,25 @@ export default function AiChatPanel({ onImportDB, onCreateDB, onOpenManualEdit }
     return new File([u8arr], filename, { type: mime });
   };
 
-  // ZIP handling
-  const handleZipUpload = (file) => setZipModalState({ isOpen: true, file });
-  const handleZipComplete = (completedFile) => {
+  const handleZipUpload = (file: File) => setZipModalState({ isOpen: true, file });
+  const handleZipComplete = (completedFile?: File | null) => {
     const targetFile = completedFile || zipModalState.file;
     const fileName = targetFile ? targetFile.name : 'ソースコード';
     addSystemMessage(`📁 プロジェクト「${fileName}」のソースコードと構造を全て記憶しました。`);
     setIsRagMode(true);
   };
 
-  // Manual edit open
-  const [editModalState, setEditModalState] = useState({ isOpen: false, blockData: null });
-  const openManualEdit = (block) => {
+  const [editModalState, setEditModalState] = useState<{ isOpen: boolean; blockData: any }>({
+    isOpen: false,
+    blockData: null,
+  });
+
+  const openManualEdit = (block: any) => {
     if (onOpenManualEdit) return onOpenManualEdit(block);
     setEditModalState({ isOpen: true, blockData: block });
   };
 
-  // Insert code -> extension or clipboard
-  const handleInsertCode = (codeSnippet) => {
+  const handleInsertCode = (codeSnippet: string) => {
     if (vscode) {
       vscode.postMessage({ command: 'insertCode', code: codeSnippet });
     } else {
@@ -327,17 +338,8 @@ export default function AiChatPanel({ onImportDB, onCreateDB, onOpenManualEdit }
     }
   };
 
-  // UI: header actions may call saveMemory for project/rule etc.
-  const handleSaveProjectMemory = (projectMeta) => saveMemory('project', projectMeta);
-  const handleSaveRuleMemory = (ruleObj) => saveMemory('rule', ruleObj);
-  const handleSaveExperience = (experienceObj) => saveMemory('experience', experienceObj);
-  const handleSaveKnowledge = (knowledgeObj) => saveMemory('knowledge', knowledgeObj);
-
-  // JSX
   return (
     <div className={`relative flex flex-col h-full bg-white dark:bg-slate-900 border-l transition-all duration-300 ${panelWidth === 'wide' ? 'w-full' : 'w-full'} ${isPastingImage ? 'ring-4 ring-blue-500 shadow-[0_0_40px_rgba(59,130,246,0.3)]' : 'border-slate-200 dark:border-slate-800'}`}>
-
-      {/* ペースト成功のオーバーレイ（blur を外してボヤけ対策） */}
       {isPastingImage && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-blue-500/10 transition-all duration-300">
           <div className="bg-white dark:bg-slate-800 px-8 py-6 rounded-2xl shadow-2xl transform scale-105 flex flex-col items-center">
@@ -355,23 +357,22 @@ export default function AiChatPanel({ onImportDB, onCreateDB, onOpenManualEdit }
         onLoadHistory={loadHistory}
         onOpenMemory={() => setIsMemoryOpen(true)}
         onDownloadZip={() => console.log('ZIPダウンロード')}
-        onUploadImage={(file) => {
+        onUploadImage={(file: File) => {
           saveScreenshotToExtension(file);
-          if (sendImage) sendImage(file).catch(e => console.warn(e));
+          if (sendImage) sendImage(file).catch((e) => console.warn(e));
         }}
         onUploadZip={handleZipUpload}
-        // optional quick-save actions:
-        onSaveProjectMemory={(meta) => handleSaveProjectMemory(meta)}
-        onSaveRuleMemory={(rule) => handleSaveRuleMemory(rule)}
+        onSaveProjectMemory={(meta: any) => saveMemory('project', meta)}
+        onSaveRuleMemory={(rule: any) => saveMemory('rule', rule)}
       />
 
       <AiChatMessageList
         messages={messages}
         isLoading={isLoading}
-        onOptionSelect={(selectedOptions) => {
+        onOptionSelect={(selectedOptions: string[]) => {
           addSystemMessage(`選択結果: ${selectedOptions.join(', ')}`);
           if (selectedOptions.includes('自分で編集')) {
-            const lastUiCodeMessage = [...messages].reverse().find(m => m.type === 'ui_code');
+            const lastUiCodeMessage = [...messages].reverse().find((m) => m.type === 'ui_code');
             if (lastUiCodeMessage && lastUiCodeMessage.content?.blocks?.[0]) openManualEdit(lastUiCodeMessage.content.blocks[0]);
           }
         }}
@@ -382,9 +383,9 @@ export default function AiChatPanel({ onImportDB, onCreateDB, onOpenManualEdit }
       <AiChatInput
         onSend={sendMessage}
         isLoading={isLoading}
-        onSendImage={(file) => {
+        onSendImage={(file: File) => {
           saveScreenshotToExtension(file);
-          if (sendImage) sendImage(file).catch(e => console.warn(e));
+          if (sendImage) sendImage(file).catch((e) => console.warn(e));
         }}
         forceJsonMode={forceJsonMode}
         setForceJsonMode={setForceJsonMode}
@@ -397,7 +398,7 @@ export default function AiChatPanel({ onImportDB, onCreateDB, onOpenManualEdit }
         memories={memories}
         onUseScreenshot={handleUseScreenshot}
         onDeleteScreenshot={handleDeleteScreenshot}
-        onSaveMemory={(type, payload) => saveMemory(type, payload)}
+        onSaveMemory={(type: MemoryType, payload: any) => saveMemory(type, payload)}
       />
 
       <ZipUploadModal
@@ -411,8 +412,7 @@ export default function AiChatPanel({ onImportDB, onCreateDB, onOpenManualEdit }
         isOpen={editModalState.isOpen}
         blockData={editModalState.blockData}
         onClose={() => setEditModalState({ isOpen: false, blockData: null })}
-        onSave={(updatedHtml, updatedCss) => {
-          // 保存アクション: 必要であればサーバーへ送る or extension に渡す
+        onSave={(updatedHtml: string, updatedCss: string) => {
           console.log('手動編集保存:', updatedHtml, updatedCss);
           setEditModalState({ isOpen: false, blockData: null });
           addSystemMessage('手動編集を保存しました');
