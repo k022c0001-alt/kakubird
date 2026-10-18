@@ -1,98 +1,95 @@
-export function onReady(callback) {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', callback, { once: true });
-  } else {
-    callback();
-  }
-}
+import { onReady, getPageType, qsa } from './utils.js';
 
-export function qs(selector, root = document) {
-  return root.querySelector(selector);
-}
+function ensurePrintStyles() {
+  if (document.getElementById('kakubird-print-styles')) return;
 
-export function qsa(selector, root = document) {
-  return Array.from(root.querySelectorAll(selector));
-}
+  const style = document.createElement('style');
+  style.id = 'kakubird-print-styles';
+  style.textContent = `
+    @media print {
+      body {
+        background: #fff !important;
+        color: #111 !important;
+        font-size: 12pt;
+      }
 
-export function getPageType() {
-  return document.body?.dataset?.pageType
-    || document.body?.dataset?.printType
-    || document.body?.dataset?.pageType || 'generic';
-}
+      body[data-print-type="lesson"],
+      body[data-print-type="test"],
+      body[data-print-type="answer"],
+      body[data-print-type="report"],
+      body[data-business-type] {
+        background: #ffffff !important;
+      }
 
-export function formatDate(date, options = {}) {
-  const value = date instanceof Date ? date : new Date(date);
-  return new Intl.DateTimeFormat('ja-JP', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    ...options,
-  }).format(value);
-}
+      .no-print,
+      [data-no-print="true"],
+      nav,
+      footer,
+      button,
+      form,
+      .cart-widget,
+      .reservation-widget {
+        display: none !important;
+      }
 
-export function escapeHtml(value = '') {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
+      .print-surface {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+        background: white !important;
+      }
 
-export function createElement(tag, attrs = {}, children = []) {
-  const element = document.createElement(tag);
-  Object.entries(attrs).forEach(([key, value]) => {
-    if (value === null || value === undefined) return;
-    if (key === 'className') {
-      element.className = value;
-      return;
+      .page-break {
+        break-after: page;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th, td {
+        border: 1px solid #b7b7b7;
+        padding: 0.45rem 0.5rem;
+      }
     }
-    element.setAttribute(key, value);
+  `;
+
+  document.head.appendChild(style);
+}
+
+function setPageMeta() {
+  const type = getPageType();
+  const title = document.body?.dataset?.pageTitle || document.title || `Print ${type}`;
+  document.title = title;
+  document.body.setAttribute('data-print-type', type);
+}
+
+function bindPrintButtons() {
+  qsa('[data-action="print"], [data-action="pdf"], [data-print-button]').forEach((button) => {
+    button.addEventListener('click', () => {
+      ensurePrintStyles();
+      setPageMeta();
+      window.print();
+    });
   });
+}
 
-  children.forEach((child) => {
-    if (typeof child === 'string') {
-      element.insertAdjacentHTML('beforeend', child);
-      return;
-    }
-    if (child instanceof Node) {
-      element.appendChild(child); 
-    }
+export function initPrintTools() {
+  ensurePrintStyles();
+  setPageMeta();
+  bindPrintButtons();
+
+  qsa('[data-print-layout]').forEach((element) => {
+    const mode = element.dataset.printLayout;
+    element.classList.add('print-surface');
+    element.dataset.printMode = mode;
   });
-
-  return element;
 }
 
-export function getDataAttributes(node) {
-  if (!node) return {};
-  return Object.fromEntries(
-    Array.from(node.attributes)
-      .filter((attr) => attr.name.startsWith('data-'))
-      .map((attr) => [attr.name.replace(/^data-/, ''), attr.value])
-  );
-}
+onReady(() => {
+  initPrintTools();
+});
 
-export function toCurrency(value) {
-  return Number(value || 0).toLocaleString('ja-JP');
-}
+window.kakubirdPrint = { initPrintTools };
 
-export function safeParseJSON(value, fallback = {}) {
-  try {
-    return JSON.parse(value);
-  } catch {
-    return fallback;
-  }
-}
-
-export function readLocalStorage(key, fallback = null) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? safeParseJSON(raw, fallback) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-export function writeLocalStorage(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
-}
+export default { initPrintTools };

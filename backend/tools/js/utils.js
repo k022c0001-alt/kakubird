@@ -1,66 +1,99 @@
-# Kakubird HTML Tools
+export function onReady(callback) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', callback, { once: true });
+  } else {
+    callback();
+  }
+}
 
-このフォルダは、Gemini で生成した HTML をそのまま使いながら、後から編集・拡張しやすくするための JavaScript ツール群です。
+export function qs(selector, root = document) {
+  return root.querySelector(selector);
+}
 
-## 使い方
+export function qsa(selector, root = document) {
+  return Array.from(root.querySelectorAll(selector));
+}
 
-HTML の末尾で次を読み込んでください。
+export function getPageType() {
+  return document.body?.dataset?.pageType
+    || document.body?.dataset?.printType
+    || document.body?.dataset?.businessType
+    || 'generic';
+}
 
-```html
-<script type="module" src="/backend/tools/js/index.js"></script>
-```
+export function formatDate(date, options = {}) {
+  const value = date instanceof Date ? date : new Date(date);
+  return new Intl.DateTimeFormat('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    ...options,
+  }).format(value);
+}
 
-## 主要な機能
+export function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
-- 印刷対応: `data-action="print"` を付けたボタンで印刷
-- PDF 配布: 印刷ダイアログを起動して PDF 保存に対応
-- Excel/CSV エクスポート: `data-export-target` と `data-export-type` を使う
-- 問い合わせフォーム: `data-form-type` で validation と送信を自動化
-- 予約フォーム: 日付に応じて時間帯を自動更新
-- 商品管理: localStorage を使った簡易カート
-- 教員向けプリント: `data-page-type="lesson"` と `data-print-type="test"` などでレイアウト切替
+export function createElement(tag, attrs = {}, children = []) {
+  const element = document.createElement(tag);
+  Object.entries(attrs).forEach(([key, value]) => {
+    if (value === null || value === undefined) return;
+    if (key === 'className') {
+      element.className = value;
+      return;
+    }
+    element.setAttribute(key, value);
+  });
 
-## 例
+  children.forEach((child) => {
+    if (typeof child === 'string') {
+      element.insertAdjacentHTML('beforeend', child);
+      return;
+    }
+    if (child instanceof Node) {
+      element.appendChild(child);
+    }
+  });
 
-```html
-<body data-page-type="lesson" data-print-type="test" data-page-title="英語テストプリント">
-  <button data-action="print">印刷</button>
-  <button data-export-target="#worksheet-table" data-export-type="csv" data-filename="worksheet.csv">Excel出力</button>
+  return element;
+}
 
-  <form data-form-type="contact" data-submit-url="/api/contact" data-success-message="お問い合わせを受け付けました。">
-    <input type="text" name="name" required />
-    <input type="email" name="email" required />
-    <textarea name="message" required></textarea>
-    <button type="submit">送信</button>
-  </form>
-</body>
-```
+export function getDataAttributes(node) {
+  if (!node) return {};
+  return Object.fromEntries(
+    Array.from(node.attributes)
+      .filter((attr) => attr.name.startsWith('data-'))
+      .map((attr) => [attr.name.replace(/^data-/, ''), attr.value])
+  );
+}
 
-## ページ種別
+export function toCurrency(value) {
+  return Number(value || 0).toLocaleString('ja-JP');
+}
 
-以下の値が使えます。
+export function safeParseJSON(value, fallback = {}) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
 
-- `lesson`
-- `test`
-- `answer`
-- `report`
-- `contact`
-- `reservation`
-- `presentation`
-- `shop`
-- `public`
+export function readLocalStorage(key, fallback = null) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? safeParseJSON(raw, fallback) : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
-## 追加するときのルール
-
-- HTML はレイアウトやコンテンツに集中する
-- JavaScript は機能ごとに分割する
-- UI だけを差し替えたい場合は `data-*` 属性で制御する
-- Gemini �� HTML を再生成しても、JS の構造はほぼ維持できる
-
-## 今後の拡張候補
-
-- 先生向けのテスト採点支援
-- オンライン授業の発表スライド制御
-- 予約システムのカレンダー連携
-- ネットショップの在庫管理連携
-- PDF 変換用のサーバー側 API 連携
+export function writeLocalStorage(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
