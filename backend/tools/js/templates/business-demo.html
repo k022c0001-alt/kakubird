@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>喫茶カクバード</title>
+    <style>
+      :root {
+        --bg: #f6efe8;
+        --panel: #fffdfb;
+        --accent: #5a3b2a;
+        --accent-soft: #c89f7e;
+        --text: #2d231f;
+        --muted: #76675f;
+        --line: #ebe0d7;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .hero {
+        background: linear-gradient(135deg, #4a2f27, #b98967);
+        color: white;
+        border-radius: 22px;
+        padding: 48px 28px;
+        box-shadow: 0 16px 32px rgba(45, 35, 31, 0.1);
+      }
+
+      .hero h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2rem, 5vw, 3.6rem);
+      }
+
+      .hero p {
+        margin: 0 0 24px;
+        font-size: 1.04rem;
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      .btn {
+        appearance: none;
+        border: none;
+        border-radius: 999px;
+        padding: 12px 18px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.15s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .btn.primary {
+        background: #fff;
+        color: var(--accent);
+      }
+
+      .btn.secondary {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 18px;
+        margin-top: 28px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 12px 20px rgba(42, 33, 29, 0.04);
+      }
+
+      .card h3 {
+        margin-top: 0;
+        margin-bottom: 18px;
+      }
+
+      .menu-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .menu-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 8px;
+      }
+
+      .two-column {
+        display: grid;
+        grid-template-columns: 1.3fr 0.7fr;
+        gap: 20px;
+        margin-top: 26px;
+      }
+
+      form {
+        display: grid;
+        gap: 12px;
+      }
+
+      label {
+        display: grid;
+        gap: 8px;
+        font-weight: 600;
+      }
+
+      input, select, textarea {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid var(--line);
+        background: white;
+        border-radius: 12px;
+        padding: 12px 14px;
+        color: var(--text);
+        font: inherit;
+      }
+
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th, td {
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        text-align: left;
+      }
+
+      .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 16px;
+        margin-top: 20px;
+      }
+
+      .product-box {
+        background: white;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+      }
+
+      .product-box h4 {
+        margin: 0 0 8px;
+      }
+
+      .product-box .meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 12px;
+      }
+
+      .cart-summary {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: var(--accent);
+      }
+
+      .small {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      @media (max-width: 760px) {
+        .two-column {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media print {
+        .no-print {
+          display: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body data-business-type="cafe" data-business-name="喫茶カクバード">
+    <div class="container">
+      <header class="hero">
+        <div class="toolbar no-print">
+          <button class="btn primary" data-action="print">印刷</button>
+          <button class="btn secondary" data-export-target="#menu-table" data-export-type="csv" data-filename="menu.csv">CSV出力</button>
+        </div>
+        <h1>喫茶カクバード</h1>
+        <p>手作りのコーヒーと静かなひとときを。カフェ・予約・お問い合わせ・商品紹介まで、ひとつのページで対応できます。</p>
+      </header>
+
+      <section class="grid">
+        <article class="card">
+          <h3>人気メニュー</h3>
+          <div class="menu-list">
+            <div class="menu-item"><span>ハンドドリップ</span><strong>480円</strong></div>
+            <div class="menu-item"><span>カフェラテ</span><strong>560円</strong></div>
+            <div class="menu-item"><span>チーズケーキ</span><strong>420円</strong></div>
+            <div class="menu-item"><span>クロワッサン</span><strong>360円</strong></div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h3>営業時間</h3>
+          <p>平日 8:00 - 19:00</p>
+          <p>土日 9:00 - 20:00</p>
+          <p class="small">駅前徒歩3分・駐輪場あり</p>
+        </article>
+
+        <article class="card">
+          <h3>特長</h3>
+          <p>コーヒーとおやつの販売</p>
+          <p>席の予約対応</p>
+          <p>お問い合わせフォーム</p>
+          <p>印刷・CSV出力</p>
+        </article>
+      </section>
+
+      <section class="two-column">
+        <article class="card">
+          <h3>席の予約</h3>
+          <form data-reservation-form data-form-type="reservation">
+            <label>
+              予約日
+              <input name="reservation_date" type="date" required />
+            </label>
+            <label>
+              時間帯
+              <select name="reservation_slot" required></select>
+            </label>
+            <label>
+              ご利用人数
+              <select name="people">
+                <option>1名</option>
+                <option>2名</option>
+                <option>3名</option>
+                <option>4名</option>
+                <option>5名以上</option>
+              </select>
+            </label>
+            <label>
+              お名前
+              <input name="name" placeholder="例：山田 太郎" required />
+            </label>
+            <label>
+              電話番号
+              <input name="tel" type="tel" placeholder="例：090-1234-5678" required />
+            </label>
+            <button type="submit" class="btn primary">予約する</button>
+          </form>
+        </article>
+
+        <aside class="card">
+          <h3>簡易カート</h3>
+          <div class="cart-summary" data-cart-summary>合計 0 円</div>
+          <div class="small no-print">商品ボタンを押すとカートに追加されます</div>
+          <button class="btn secondary no-print" data-cart-clear style="margin-top: 12px;">カートを空にする</button>
+        </aside>
+      </section>
+
+      <section class="card" style="margin-top: 26px;">
+        <h3>商品一覧</h3>
+        <table id="menu-table">
+          <thead>
+            <tr>
+              <th>商品名</th>
+              <th>価格</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>ブレンドコーヒー</td>
+              <td>480円</td>
+              <td><button class="btn secondary" data-product-add data-product-name="ブレンドコーヒー" data-product-price="480">追加</button></td>
+            </tr>
+            <tr>
+              <td>カフェラテ</td>
+              <td>560円</td>
+              <td><button class="btn secondary" data-product-add data-product-name="カフェラテ" data-product-price="560">追加</button></td>
+            </tr>
+            <tr>
+              <td>チーズケーキ</td>
+              <td>420円</td>
+              <td><button class="btn secondary" data-product-add data-product-name="チーズケーキ" data-product-price="420">追加</button></td>
+            </tr>
+            <tr>
+              <td>クロワッサン</td>
+              <td>360円</td>
+              <td><button class="btn secondary" data-product-add data-product-name="クロワッサン" data-product-price="360">追加</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card" style="margin-top: 26px;">
+        <h3>お問い合わせ</h3>
+        <form data-form-type="contact" data-submit-url="/api/contact" data-success-message="お問い合わせを受け付けました。">
+          <label>
+            お名前
+            <input name="name" placeholder="例：鈴木 花子" required />
+          </label>
+          <label>
+            メールアドレス
+            <input name="email" type="email" placeholder="例：hello@example.com" required />
+          </label>
+          <label>
+            電話番号
+            <input name="tel" type="tel" placeholder="例：090-1234-5678" required />
+          </label>
+          <label>
+            ご要望
+            <textarea name="notes" placeholder="ご質問・ご要望を入力してください" required></textarea>
+          </label>
+          <button type="submit" class="btn primary">送信する</button>
+        </form>
+      </section>
+    </div>
+
+    <script type="module" src="/backend/tools/js/index.js"></script>
+  </body>
+</html>
