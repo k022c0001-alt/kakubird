@@ -1,61 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-"""
-IntentInspector.py
-==================
-
-ユーザー入力を複数のDetectorで解析し、
-ChatOrchestrator / Handler選択に必要なIntent情報を生成する。
-
-基本方針
---------
-IntentInspector自身は細かな意味判定を抱え込まず、
-
-    Detector
-        ↓
-    Context
-        ↓
-    ModeRule
-        ↓
-    System Routing補正（Parser / Decomposition）
-
-という流れでIntentを構築する司令塔（オーケストレーション層）。
-
-Detector役割
-------------
-ForcedHandlerDetector
-    メッセージ内の強制Handler指定を検出する。
-
-ActionDetector
-    actions.json のキーワードからユーザーの意図アクションを検出する。
-
-TargetDetector
-    targets.json のキーワードから操作対象を検出する。
-
-ThemeSurfaceDetector
-    UI（テーマ・面・レスポンシブ有無）の文脈を検出する。
-
-DeploymentMetricDetector
-    デプロイ関連のキーワード・テーマを検出する。
-
-MessageTypeDetector
-    メッセージ種別（コードか、HTMLを含むか等）を判定する。
-
-System Routing（IntentInspectorが最後に補正するもの）
-------------------------------------------------------
-DecompositionHandler
-    <script>...</script> の抽出・分解などを扱う。
-
-ParserHandler
-    Python / Java / JavaScript / JSX などのソースコード解析を扱う。
-
-    誤ルーティングを防ぐため、ModeRuleのスコアリング結果よりも
-    優先して最後に上書きする。
-"""
-
+# IntentInspector.py
 from __future__ import annotations
 
+import importlib
 import os
 import re
 from typing import Any, Dict, List, Optional, Tuple
@@ -69,8 +17,7 @@ from .detectors import (
     load_json,
 )
 from .MessageTypeDetector import MessageTypeDetector
-from .mode_rule import build_mode_rules
-
+from .mode_rule import PYTHON_MODE_RULES, build_mode_rules
 
 # ============================================================
 # Path / Cache
@@ -88,74 +35,46 @@ _REQUIRED_KNOWLEDGE_KEYS = (
     "mode_rules",
     "deployment_keywords",
     "deployment_themes",
+    "parser_keywords",
+    "feature_aliases",
+    "crud_features",
+    "tools",  # ← tools.json を自動キャッシュ対象に追加
 )
 
-# 旧配置（Intentknowledge/ができる前の名残）との互換用
-_LEGACY_KNOWLEDGE_FILES = (
-    "deployment_keywords.json",
-    "deployment_themes.json",
-)
+
+def _ensure_loaded() -> None:
+    """キャッシュが空の場合のみ、JSONを読み込んで初期化する"""
+    global _INSPECTOR_CACHE
+    if _INSPECTOR_CACHE:
+        return
+
+    loaded_files = 0
+    if os.path.isdir(_KNOWLEDGE_DIR):
+        for root, _, files in os.walk(_KNOWLEDGE_DIR):
+            for file_name in files:
+                if not file_name.lower().endswith(".json"):
+                    continue
+
+                file_path = os.path.join(root, file_name)
+                cache_key = os.path.splitext(file_name)[0]
+
+                try:
+                    data = load_json(file_path)
+                    _INSPECTOR_CACHE[cache_key] = data
+                    loaded_files += 1
+                except Exception as exc:
+                    print(f"⚠️ [IntentInspector] Load Error {file_name}: {exc}", flush=True)
+
+    for key in _REQUIRED_KNOWLEDGE_KEYS:
+        _INSPECTOR_CACHE.setdefault(key, {})
+
+    print(f"🧠 [IntentInspector] Knowledge Loaded: {loaded_files} files", flush=True)
 
 
-# ============================================================
-# Parser Routing Settings
-# ============================================================
-
-PARSER_COMMANDS = (
-    "/parse",
-    "/code",
-    "/analyze",
-)
-
-PARSER_STRONG_KEYWORDS = (
-    "コードを解析",
-    "コード解析",
-    "コードを説明",
-    "コードを読んで",
-    
-    "コードを読み取って",
-    "コードを読み取る",
-    "コードを見て",
-    "ソースを解析",
-    "ソースコードを解析",
-    "関数を説明",
-    "関数を解析",
-    "メソッドを説明",
-    "メソッドを解析",
-    "クラスを説明",
-    "クラスを解析",
-    "変数を説明",
-    "変数を解析",
-)
-
-ANALYSIS_KEYWORDS = (
-    "解析",
-    "分析",
-    "説明",
-    "読み取",
-    "調べ",
-    "見て",
-)
-
-LANGUAGE_ALIASES = {
-    "python": "python",
-    "py": "python",
-    "javascript": "javascript",
-    "js": "javascript",
-    "jsx": "javascript",
-    "react": "javascript",
-    "java": "java",
-}
-
-DECOMPOSITION_KEYWORDS = (
-    "抽出",
-    "取り出",
-    "分解",
-    "切り出",
-    "script",
-    "jsに",
-    "javascriptに",
-)
+def get_knowledge_cache() -> Dict[str, Any]:
+    """他モジュールから安全に呼べる公開API。未ロードなら強制ロードする。"""
+    _ensure_loaded()
+    return _INSPECTOR_CACHE
 
 
 # ============================================================
@@ -164,7 +83,8 @@ DECOMPOSITION_KEYWORDS = (
 
 class IntentInspector:
     """
-    Detector群をまとめ、Handler選択用のIntentを生成する。
+    Detector群・ModeRule・toolsフォルダーのプラグインを統合し、
+    Handler選択用のIntentを生成するスリムな司令塔。
     """
 
     def __init__(
@@ -178,19 +98,14 @@ class IntentInspector:
         self.message = self._normalize_message(message)
         self.msg_lower = self.message.lower().strip()
 
-        self._load_knowledge()
+        _ensure_loaded()
         self._initialize_detectors()
-
-    # ========================================================
-    # Message Normalization
-    # ========================================================
 
     @staticmethod
     def _normalize_message(message: Any) -> str:
         """str / オブジェクト形式のmessageを文字列へ統一する。"""
         if isinstance(message, str):
             return message
-
         return str(
             getattr(
                 message,
@@ -198,63 +113,6 @@ class IntentInspector:
                 getattr(message, "content", getattr(message, "body", message)),
             )
         )
-
-    # ========================================================
-    # Knowledge Load
-    # ========================================================
-
-    def _load_knowledge(self) -> None:
-        """Intentknowledge配下のJSONをプロセス全体で1回だけキャッシュする。"""
-        global _INSPECTOR_CACHE
-
-        if _INSPECTOR_CACHE:
-            return
-
-        print("📦 [IntentInspector] Intentknowledge JSONを読み込みます...", flush=True)
-
-        # Intentknowledge/ 配下を再帰ロード
-        if os.path.exists(_KNOWLEDGE_DIR):
-            for root, _, files in os.walk(_KNOWLEDGE_DIR):
-                for file_name in files:
-                    if not file_name.lower().endswith(".json"):
-                        continue
-
-                    file_path = os.path.join(root, file_name)
-                    cache_key = os.path.splitext(file_name)[0]
-
-                    try:
-                        _INSPECTOR_CACHE[cache_key] = load_json(file_path)
-                    except Exception as exc:
-                        print(
-                            f"⚠️ [IntentInspector] {file_name} 読み込み失敗: {exc}",
-                            flush=True,
-                        )
-
-        # 旧配置（Intentknowledge/より前）との互換
-        for extra_file in _LEGACY_KNOWLEDGE_FILES:
-            cache_key = os.path.splitext(extra_file)[0]
-            if cache_key in _INSPECTOR_CACHE:
-                continue
-
-            extra_path = os.path.join(_DIR, extra_file)
-            if not os.path.exists(extra_path):
-                continue
-
-            try:
-                _INSPECTOR_CACHE[cache_key] = load_json(extra_path)
-            except Exception as exc:
-                print(
-                    f"⚠️ [IntentInspector] {extra_file} 読み込み失敗: {exc}",
-                    flush=True,
-                )
-
-        # 必須キーが無い場合は空dictで保証（後段の.get()を安全にする）
-        for key in _REQUIRED_KNOWLEDGE_KEYS:
-            _INSPECTOR_CACHE.setdefault(key, {})
-
-    # ========================================================
-    # Detector Initialization
-    # ========================================================
 
     def _initialize_detectors(self) -> None:
         self.forced_detector = ForcedHandlerDetector()
@@ -268,15 +126,21 @@ class IntentInspector:
         self.message_detector = MessageTypeDetector(self.message)
 
         mode_rule_data = _INSPECTOR_CACHE["mode_rules"]
+        # mode_rules.json が未設定でも PYTHON_MODE_RULES の7種が必ず動くように順序を構築
+        rule_order = list(mode_rule_data.keys()) if mode_rule_data else list(PYTHON_MODE_RULES.keys())
+        for py_mode in PYTHON_MODE_RULES:
+            if py_mode not in rule_order:
+                rule_order.append(py_mode)
+
         self.mode_rules = build_mode_rules(
             _INSPECTOR_CACHE["scoring"],
             mode_rule_data,
-            list(mode_rule_data.keys()),
+            rule_order,
         )
 
-    # ========================================================
-    # Context
-    # ========================================================
+        self.conversation_actions: Dict[str, List[str]] = _INSPECTOR_CACHE.get(
+            "conversation_actions", {}
+        )
 
     def _build_context(
         self,
@@ -303,67 +167,6 @@ class IntentInspector:
         }
 
     # ========================================================
-    # Code Language Detection
-    # ========================================================
-
-    def _detect_code_language(self) -> Optional[str]:
-        # Markdown fence（```python, ```js など）を最優先
-        fence_match = re.search(r"```([a-zA-Z0-9_+\-#]+)", self.message)
-        if fence_match:
-            hint = fence_match.group(1).lower()
-            detected = LANGUAGE_ALIASES.get(hint)
-            if detected:
-                return detected
-
-        # 自然文からの推測
-        for alias, language in LANGUAGE_ALIASES.items():
-            if self._contains_word(self.msg_lower, alias):
-                return language
-
-        return None
-
-    # ========================================================
-    # Parser Routing
-    # ========================================================
-
-    def _detect_parser_request(self, message_type: Dict[str, Any]) -> Tuple[bool, str]:
-        msg = self.msg_lower
-
-        if any(msg.startswith(command) for command in PARSER_COMMANDS):
-            return True, "parser_command"
-
-        if "```" in self.message:
-            return True, "markdown_code_block"
-
-        if any(keyword in msg for keyword in PARSER_STRONG_KEYWORDS):
-            return True, "explicit_code_analysis"
-
-        language = self._detect_code_language()
-        has_analysis_request = any(keyword in msg for keyword in ANALYSIS_KEYWORDS)
-
-        if language and has_analysis_request:
-            return True, "language_and_analysis"
-
-        # message_type.is_code だけでは強制ルーティングしない
-        return False, ""
-
-    # ========================================================
-    # Decomposition Routing
-    # ========================================================
-
-    def _detect_decomposition_request(self) -> Tuple[bool, str]:
-        has_script_tag = bool(
-            re.search(r"<script\b[^>]*>", self.message, flags=re.IGNORECASE)
-        )
-        if not has_script_tag:
-            return False, ""
-
-        if any(keyword in self.msg_lower for keyword in DECOMPOSITION_KEYWORDS):
-            return True, "script_tag_extraction"
-
-        return True, "script_tag_detected"
-
-    # ========================================================
     # Mode Rules
     # ========================================================
 
@@ -378,18 +181,11 @@ class IntentInspector:
 
         for rule in self.mode_rules:
             try:
-                matched = rule.match(self.msg_lower, actions, targets, context)
-            except Exception as exc:
-                print(f"⚠️ [IntentInspector] ModeRule.match失敗: {exc}", flush=True)
-                continue
-
-            if not matched:
-                continue
-
-            try:
+                if not rule.match(self.msg_lower, actions, targets, context):
+                    continue
                 score = rule.calculate_score(self.msg_lower, actions, targets, context)
             except Exception as exc:
-                print(f"⚠️ [IntentInspector] ModeRule.calculate_score失敗: {exc}", flush=True)
+                print(f"⚠️ [IntentInspector] ModeRule失敗 ({rule.mode_name}): {exc}", flush=True)
                 continue
 
             if score > highest_score:
@@ -398,28 +194,188 @@ class IntentInspector:
 
         scoring = _INSPECTOR_CACHE.get("scoring", {})
         max_score = scoring.get("global", {}).get("max_score_cap", 85)
-        highest_score = min(highest_score, max_score)
-
-        return best_mode, highest_score
+        return best_mode, min(highest_score, max_score)
 
     # ========================================================
-    # Utility
+    # Tool Fast-Routing (tools.json + tools/*_tool.py 連携)
     # ========================================================
 
-    @staticmethod
-    def _contains_word(text: str, word: str) -> bool:
-        """短い英語alias（js / py等）の誤爆を防ぐための単語境界チェック。"""
-        if len(word) <= 2:
-            pattern = rf"(?<![a-z0-9_]){re.escape(word)}(?![a-z0-9_])"
-            return bool(re.search(pattern, text, flags=re.IGNORECASE))
-        return word in text
+    def _evaluate_tools(
+        self,
+        context: Dict[str, Any],
+    ) -> Tuple[Optional[Dict[str, Any]], str, Dict[str, bool], Optional[str]]:
+        """
+        tools.json に登録されたツール群を優先度順にチェックする。
+        個別ロジックは tools/*_tool.py 側の can_fast_route() に委譲する。
+        """
+        tools_list = _INSPECTOR_CACHE.get("tools", {}).get("tools", [])
+        sorted_tools = sorted(
+            tools_list,
+            key=lambda item: item.get("inspector_routing", {}).get("priority", 999),
+        )
+
+        routing_flags: Dict[str, bool] = {}
+        matched_routing: Optional[Dict[str, Any]] = None
+        matched_reason = ""
+        detected_language: Optional[str] = None
+
+        for tool_cfg in sorted_tools:
+            if not tool_cfg.get("enabled", True):
+                continue
+
+            routing_cfg = tool_cfg.get("inspector_routing", {})
+            tool_key = routing_cfg.get("flag_key") or tool_cfg.get("name", "unknown")
+
+            if not routing_cfg.get("enabled", False):
+                routing_flags[tool_key] = False
+                continue
+
+            is_match, reason, lang = self._run_tool_detector(tool_cfg, routing_cfg, context)
+            if lang and not detected_language:
+                detected_language = lang
+
+            routing_flags[tool_key] = is_match
+
+            if is_match and matched_routing is None:
+                matched_routing = routing_cfg
+                matched_reason = reason
+
+        return matched_routing, matched_reason, routing_flags, detected_language
+
+    def _run_tool_detector(
+        self,
+        tool_cfg: Dict[str, Any],
+        routing_cfg: Dict[str, Any],
+        context: Dict[str, Any],
+    ) -> Tuple[bool, str, Optional[str]]:
+        """
+        1. tool_module (例: tools.math.calculator_tool.CalculatorTool) が指定されていれば
+           その can_fast_route() を呼ぶ。
+        2. 指定がなければ JSON 内の triggers (regex / slash_commands / keywords) で判定する。
+        """
+        detector_Spec = routing_cfg.get("tool_detector") or {}
+        module_path = detector_Spec.get("module")
+        class_name = detector_Spec.get("class")
+
+        if module_path and class_name:
+            try:
+                mod = importlib.import_module(module_path)
+                tool_cls = getattr(mod, class_name)
+                is_match, reason = tool_cls.can_fast_route(
+                    self.message, self.msg_lower, _INSPECTOR_CACHE, context
+                )
+                lang = None
+                if hasattr(tool_cls, "detect_language"):
+                    lang = tool_cls.detect_language(self.message, self.msg_lower, _INSPECTOR_CACHE)
+                return is_match, reason, lang
+            except Exception as exc:
+                print(f"⚠️ [IntentInspector] ToolDetector失敗 ({module_path}.{class_name}): {exc}", flush=True)
+
+        # JSON宣言トリガーによるフォールバック判定
+        triggers = routing_cfg.get("triggers", {})
+        for cmd in triggers.get("slash_commands", []):
+            if self.msg_lower.startswith(cmd.lower()):
+                return True, f"{tool_cfg.get('name')}_command", None
+
+        regex_pat = triggers.get("regex")
+        if regex_pat and re.search(regex_pat, self.message, flags=re.IGNORECASE):
+            return True, triggers.get("default_reason", "regex_matched"), None
+
+        for kw in triggers.get("keywords", []):
+            if kw.lower() in self.msg_lower:
+                return True, f"{tool_cfg.get('name')}_keyword", None
+
+        return False, "", None
+
+    # ========================================================
+    # Conversation Intent Detection (Phase 2)
+    # ========================================================
+
+    def _detect_conversation_intent(self) -> Tuple[Optional[str], int, List[str]]:
+        if not isinstance(self.conversation_actions, dict):
+            return None, 0, []
+
+        best_intent: Optional[str] = None
+        best_score = 0
+        best_matches: List[str] = []
+        normalized_message = self.msg_lower.strip()
+
+        for intent_name, keywords in self.conversation_actions.items():
+            if not isinstance(keywords, list):
+                continue
+
+            matched_keywords = [
+                str(kw).lower().strip()
+                for kw in keywords
+                if str(kw).strip() and self._conversation_keyword_matches(str(kw).lower().strip())
+            ]
+            if not matched_keywords:
+                continue
+
+            score = sum(35 if len(k) >= 8 else 25 if len(k) >= 4 else 10 for k in matched_keywords)
+            for k in matched_keywords:
+                if normalized_message == k:
+                    score += 40
+                elif normalized_message.startswith(k):
+                    score += 10
+
+            if len(self.message.strip()) <= 20:
+                score += 10
+            if len(self.message.strip()) >= 40 and all(len(k) <= 2 for k in matched_keywords):
+                score = min(score, 10)
+
+            score = min(score, 100)
+            if score > best_score:
+                best_score = score
+                best_intent = str(intent_name)
+                best_matches = matched_keywords
+
+        return best_intent, best_score, best_matches
+
+    def _conversation_keyword_matches(self, keyword: str) -> bool:
+        message = self.msg_lower.strip()
+        if not keyword:
+            return False
+        if len(keyword) >= 3:
+            return keyword in message
+        if message == keyword:
+            return True
+        return bool(
+            re.search(rf"(?:^|\n)\s*{re.escape(keyword)}(?:[、,。.!！?？\s]|$)", message)
+        )
+
+    # ========================================================
+    # Frontend Export (フロントエンド連携用API)
+    # ========================================================
+
+    def get_available_commands(self) -> Dict[str, Any]:
+        pk = _INSPECTOR_CACHE.get("parser_keywords", {})
+        conversation_keys = (
+            list(self.conversation_actions.keys())
+            if isinstance(self.conversation_actions, dict)
+            else []
+        )
+        action_keys = list(_INSPECTOR_CACHE.get("actions", {}).keys())
+        registered_tools = [
+            t.get("name") for t in _INSPECTOR_CACHE.get("tools", {}).get("tools", []) if t.get("name")
+        ]
+
+        return {
+            "slash_commands": pk.get("PARSER_COMMANDS", []),
+            "parser_keywords": pk.get("PARSER_STRONG_KEYWORDS", []),
+            "decomposition_keywords": pk.get("DECOMPOSITION_KEYWORDS", []),
+            "conversation_intents": conversation_keys,
+            "action_intents": action_keys,
+            "registered_tools": registered_tools,
+        }
 
     # ========================================================
     # Inspect（エントリーポイント）
     # ========================================================
 
     def inspect(self) -> Dict[str, Any]:
-        # --- Detector実行 ---
+        print("🚨 [IntentInspector ENTER]", repr(self.message), flush=True)
+
         forced_handler = self.forced_detector.detect(self.message)
         message_type = self.message_detector.detect()
         actions = self.action_detector.detect(self.msg_lower)
@@ -429,13 +385,18 @@ class IntentInspector:
         deployment = self.deployment_detector.detect(self.msg_lower)
 
         context = self._build_context(message_type, ui_context, deployment, target_categories)
-
-        # --- ModeRuleによるスコアリング ---
         best_mode, highest_score = self._calculate_mode(actions, targets, context)
+
+        conversation_intent, conversation_score, conversation_matches = (
+            self._detect_conversation_intent()
+        )
 
         result: Dict[str, Any] = {
             "mode": best_mode,
+            "intent": conversation_intent or best_mode or "unknown",
             "score": highest_score,
+            "intent_score": conversation_score,
+            "intent_matches": conversation_matches,
             "forced_handler": forced_handler,
             "actions": actions,
             "targets": targets,
@@ -452,33 +413,27 @@ class IntentInspector:
             highest_score = 0
             result["forced_handler"] = None
 
-        # --- System Handler Routing（最終補正） ---
-        use_decomposition, decomposition_reason = self._detect_decomposition_request()
-        use_parser, parser_reason = self._detect_parser_request(message_type)
-        detected_language = self._detect_code_language()
-        routing_reason = ""
+        # --- Tool Fast-Routing（tools.json & tools/*_tool.py による一括判定） ---
+        matched_routing, routing_reason, routing_flags, detected_language = (
+            self._evaluate_tools(context)
+        )
 
-        if use_decomposition:
-            best_mode = "script_extraction"
-            highest_score = 100
-            result["forced_handler"] = "DecompositionHandler"
-            routing_reason = decomposition_reason
-        elif use_parser:
-            best_mode = "code_analysis"
-            highest_score = 100
-            result["forced_handler"] = "ParserHandler"
-            routing_reason = parser_reason
+        if matched_routing:
+            best_mode = matched_routing.get("mode", best_mode)
+            highest_score = matched_routing.get("score", 100)
+            if matched_routing.get("forced_handler"):
+                result["forced_handler"] = matched_routing["forced_handler"]
+
+        final_intent = conversation_intent or best_mode or "unknown"
 
         result.update(
             {
                 "mode": best_mode,
+                "intent": final_intent,
                 "score": highest_score,
                 "detected_language": detected_language,
                 "routing_reason": routing_reason,
-                "routing": {
-                    "parser": use_parser,
-                    "decomposition": use_decomposition,
-                },
+                "routing": routing_flags,
             }
         )
 
@@ -486,9 +441,11 @@ class IntentInspector:
             "[IntentInspector]",
             {
                 "mode": best_mode,
+                "intent": final_intent,
                 "score": highest_score,
                 "handler": result.get("forced_handler"),
                 "language": detected_language,
+                "routing": routing_flags,
                 "reason": routing_reason,
                 "is_code": message_type.get("is_code", False),
             },
@@ -496,23 +453,3 @@ class IntentInspector:
         )
 
         return result
-
-
-# ============================================================
-# Standalone Test
-# ============================================================
-
-if __name__ == "__main__":
-    TEST_MESSAGES = [
-        "こんにちは",
-        "Pythonについて教えて",
-        "Pythonコードを解析して",
-        "/parse python",
-        "```python\ndef hello():\n    print('hello')\n```",
-        "<script>\nconsole.log('hello');\n</script>",
-        "すごい、完璧だね！",
-    ]
-
-    print("=== IntentInspector Standalone Test ===")
-    # 実運用ではdetectors / MessageTypeDetector / mode_rule 等が
-    # importできる環境で実行してください（単体では import エラーになります）。
