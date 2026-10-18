@@ -1,0 +1,333 @@
+{
+  "named_themes": {
+    "ポスター生成": {
+      "surface": "glow",
+      "layout": "poster"
+    },
+    "ポスターアプリ": {
+      "surface": "glow",
+      "layout": "poster"
+    },
+    "イベントポスター": {
+      "surface": "elevated",
+      "layout": "poster"
+    },
+    "防災啓発ポスター": {
+      "surface": "bordered",
+      "layout": "poster"
+    },
+    "博物館案内": {
+      "surface": "paper",
+      "layout": "interactive_guide"
+    },
+    "ルール順案内": {
+      "surface": "elevated",
+      "layout": "interactive_guide"
+    },
+    "ステップ案内": {
+      "surface": "glass",
+      "layout": "interactive_guide"
+    },
+    "オリエンテーション案内": {
+      "surface": "flat",
+      "layout": "interactive_guide"
+    },
+    "授業用プリント": {
+      "surface": "paper",
+      "layout": "worksheet_print"
+    },
+    "解答用紙": {
+      "surface": "bordered",
+      "layout": "worksheet_print"
+    },
+    "確認テスト": {
+      "surface": "paper",
+      "layout": "worksheet_print"
+    },
+    "ワークシート": {
+      "surface": "paper",
+      "layout": "worksheet_print"
+    },
+    "無限課金シミュレーター": {
+      "surface": "glow",
+      "layout": "satire_game_sim"
+    },
+    "高額課金ゲーム": {
+      "surface": "glow",
+      "layout": "satire_game_sim"
+    },
+    "広告だらけのゲーム": {
+      "surface": "bordered",
+      "layout": "satire_game_sim"
+    },
+    "単調ソシャゲ体験": {
+      "surface": "frosted-dark",
+      "layout": "satire_game_sim"
+    },
+    "ガチャ沼シミュレーター": {
+      "surface": "glow",
+      "layout": "satire_game_sim"
+    },
+    "猫カフェ紹介": {
+      "surface": "neumorphism",
+      "layout": "poster"
+    },
+    "展示会ページ": {
+      "surface": "glass",
+      "layout": "interactive_guide"
+    },
+    "スコアガチャシミュレーター": {
+      "surface": "glow",
+      "layout": "satire_game_sim"
+    },
+    "一撃スコアシミュレーター": {
+      "surface": "glow",
+      "layout": "satire_game_sim"
+    },
+    "ゲームシミュレーター": {
+      "surface": "glow",
+      "layout": "satire_game_sim"
+    },
+    "ゲームのシュミレーター": {
+      "surface": "glow",
+      "layout": "satire_game_sim"
+    }
+  },
+  "layout_triggers": {
+    "poster": [
+      "ポスター",
+      "チラシ",
+      "フライヤー",
+      "A4",
+      "告知",
+      "展示会",
+      "イベント",
+      "poster",
+      "flyer"
+    ],
+    "interactive_guide": [
+      "案内",
+      "ガイド",
+      "順番にクリック",
+      "ルールに沿って",
+      "ステップ",
+      "チェックリスト",
+      "オリエンテーション",
+      "手続き",
+      "ロック解除",
+      "順番",
+      "guide",
+      "step"
+    ],
+    "worksheet_print": [
+      "解答用紙",
+      "授業用プリント",
+      "プリント",
+      "テスト",
+      "問題集",
+      "ワークシート",
+      "穴埋め",
+      "採点",
+      "解答表示",
+      "worksheet",
+      "exam"
+    ],
+    "satire_game_sim": [
+      "無限課金",
+      "課金",
+      "ガチャ",
+      "広告が多すぎる",
+      "広告だらけ",
+      "単調",
+      "作業ゲー",
+      "高額すぎる",
+      "ソシャゲ",
+      "シミュレーター",
+      "シュミレーション",
+      "コンプガチャ",
+      "10連",
+      "1.5倍",
+      "4000",
+      "スコア",
+      "ステージ1",
+      "一撃",
+      "特殊能力",
+      "キャラ",
+      "ゲーム",
+      "シュミレーター"
+    ]
+  },
+  "triggers": {
+    "ja": [
+      "ホームページ",
+      "HP",
+      "ポスター",
+      "イベント",
+      "サイト",
+      "博物館",
+      "プリント",
+      "解答用紙",
+      "テスト",
+      "課金",
+      "ガチャ",
+      "広告",
+      "シミュレーター",
+      "案内",
+      "紹介",
+      "デザイン",
+      "レイアウト",
+      "作成",
+      "生成"
+    ],
+    "en": [
+      "homepage",
+      "webpage",
+      "poster",
+      "event",
+      "museum",
+      "worksheet",
+      "gacha",
+      "simulator",
+      "guide",
+      "create",
+      "generate",
+      "design"
+    ],
+    "commands": [
+      "/html",
+      "/css",
+      "/design",
+      "/poster",
+      "/guide",
+      "/print",
+      "/gacha"
+    ]
+  },
+  "surface_keywords": {
+    "glass": {
+      "ja": [
+        "ガラス",
+        "グラスモフィズム",
+        "透明感",
+        "透き通る",
+        "展示会"
+      ],
+      "en": [
+        "glass",
+        "glassmorphism",
+        "transparent",
+        "exhibition"
+      ]
+    },
+    "frosted-dark": {
+      "ja": [
+        "ダークモード",
+        "すりガラス黒",
+        "暗いガラス",
+        "シネマティック",
+        "単調"
+      ],
+      "en": [
+        "dark",
+        "frosted-dark",
+        "night",
+        "cinematic"
+      ]
+    },
+    "elevated": {
+      "ja": [
+        "エレベート",
+        "立体感",
+        "影付き",
+        "モダン",
+        "案内"
+      ],
+      "en": [
+        "elevated",
+        "shadow",
+        "floating",
+        "modern"
+      ]
+    },
+    "bordered": {
+      "ja": [
+        "ボーダー",
+        "枠線",
+        "クッキリ",
+        "明確",
+        "防災",
+        "解答用紙",
+        "広告"
+      ],
+      "en": [
+        "bordered",
+        "outline",
+        "stroke",
+        "safety"
+      ]
+    },
+    "flat": {
+      "ja": [
+        "フラット",
+        "シンプル",
+        "平面",
+        "ミニマル"
+      ],
+      "en": [
+        "flat",
+        "minimal",
+        "simple"
+      ]
+    },
+    "glow": {
+      "ja": [
+        "グロー",
+        "発光",
+        "ネオン",
+        "サイバー",
+        "ポスター",
+        "課金",
+        "ガチャ"
+      ],
+      "en": [
+        "glow",
+        "neon",
+        "cyber",
+        "poster",
+        "gacha"
+      ]
+    },
+    "neumorphism": {
+      "ja": [
+        "ニューモフィズム",
+        "柔らかい影",
+        "直感的",
+        "猫カフェ",
+        "かわいい"
+      ],
+      "en": [
+        "neumorphism",
+        "soft-shadow",
+        "cute"
+      ]
+    },
+    "paper": {
+      "ja": [
+        "ペーパー",
+        "紙",
+        "レトロ",
+        "和風",
+        "博物館",
+        "プリント",
+        "授業"
+      ],
+      "en": [
+        "paper",
+        "texture",
+        "vintage",
+        "worksheet",
+        "print"
+      ]
+    }
+  }
+}

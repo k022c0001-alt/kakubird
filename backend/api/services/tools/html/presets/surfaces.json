@@ -1,0 +1,26 @@
+{
+  "glass": {
+    "css": ":root {\n  --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #c7d2fe 100%);\n  --surface-bg: rgba(255, 255, 255, 0.72);\n  --surface-border: rgba(255, 255, 255, 0.6);\n  --text-primary: #1e293b;\n  --text-secondary: #475569;\n  --accent: #4f46e5;\n  --radius: 16px;\n}\n.glass {\n  background: var(--surface-bg);\n  backdrop-filter: blur(12px);\n  -webkit-backdrop-filter: blur(12px);\n  border: 1px solid var(--surface-border);\n  border-radius: var(--radius);\n  padding: 24px;\n  color: var(--text-primary);\n  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);\n}"
+  },
+  "frosted-dark": {
+    "css": ":root {\n  --surface-bg: rgba(15, 23, 42, 0.85);\n  --surface-border: rgba(255, 255, 255, 0.12);\n  --text-primary: #f8fafc;\n  --text-secondary: #94a3b8;\n  --accent: #38bdf8;\n  --radius: 12px;\n}\n.frosted-dark {\n  background: var(--surface-bg);\n  backdrop-filter: blur(16px);\n  border: 1px solid var(--surface-border);\n  border-radius: var(--radius);\n  padding: 24px;\n  color: var(--text-primary);\n  box-shadow: 0 10px 30px rgba(0,0,0,0.5);\n}"
+  },
+  "elevated": {
+    "css": ":root {\n  --surface-bg: #ffffff;\n  --text-primary: #18181b;\n  --text-secondary: #52525b;\n  --accent: #2563eb;\n  --radius: 12px;\n  --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.08);\n}\n.elevated {\n  background: var(--surface-bg);\n  border-radius: var(--radius);\n  padding: 28px;\n  color: var(--text-primary);\n  box-shadow: var(--shadow);\n}"
+  },
+  "bordered": {
+    "css": ":root {\n  --surface-bg: #ffffff;\n  --text-primary: #0f172a;\n  --text-secondary: #334155;\n  --accent: #dc2626;\n  --border-color: #0f172a;\n}\n.bordered {\n  background: var(--surface-bg);\n  border: 3px solid var(--border-color);\n  border-radius: 6px;\n  padding: 24px;\n  color: var(--text-primary);\n}"
+  },
+  "flat": {
+    "css": ":root {\n  --surface-bg: #f8fafc;\n  --text-primary: #1e293b;\n  --text-secondary: #475569;\n  --accent: #0f766e;\n}\n.flat {\n  background: var(--surface-bg);\n  border-radius: 4px;\n  padding: 24px;\n  color: var(--text-primary);\n}"
+  },
+  "glow": {
+    "css": ":root {\n  --surface-bg: #090a10;\n  --text-primary: #ffffff;\n  --text-secondary: #cbd5e1;\n  --accent: #00f5d4;\n  --glow-shadow: 0 0 18px rgba(0, 245, 212, 0.45);\n}\n.glow {\n  background: var(--surface-bg);\n  border: 1px solid var(--accent);\n  border-radius: 12px;\n  padding: 24px;\n  color: var(--text-primary);\n  box-shadow: var(--glow-shadow);\n}"
+  },
+  "neumorphism": {
+    "css": ":root {\n  --surface-bg: #e2e8f0;\n  --text-primary: #334155;\n  --text-secondary: #64748b;\n  --accent: #ea580c;\n}\n.neumorphism {\n  background: var(--surface-bg);\n  border-radius: 20px;\n  padding: 30px;\n  color: var(--text-primary);\n  box-shadow: 8px 8px 16px #cbd5e1, -8px -8px 16px #ffffff;\n}"
+  },
+  "paper": {
+    "css": ":root {\n  --surface-bg: #fdfbf7;\n  --text-primary: #1c1917;\n  --text-secondary: #44403c;\n  --accent: #9a3412;\n  --border-sepia: #d6d3d1;\n}\n.paper {\n  background: var(--surface-bg);\n  border: 1px solid var(--border-sepia);\n  border-radius: 2px;\n  padding: 32px;\n  color: var(--text-primary);\n  font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif JP', serif;\n  box-shadow: 0 4px 10px rgba(0,0,0,0.06);\n}"
+  }
+}

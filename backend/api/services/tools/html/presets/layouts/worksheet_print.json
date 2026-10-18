@@ -1,0 +1,44 @@
+{
+  "name": "worksheet_print",
+  "description": "授業用プリント＆解答用紙（問題JSONを書き換えるだけでメンテナンス可能・ワンクリックで問題/解答用紙/模範解答を切替）",
+  "script_engine": "worksheet_engine",
+  "default_config": {
+    "subject": "高校歴史 / 公民 共通演習",
+    "unitTitle": "第1章：重要用語と制度の理解",
+    "timeLimitMinutes": 20,
+    "questions": [
+      {
+        "number": 1,
+        "type": "fill",
+        "prompt": "律令制において、令の解釈をまとめた公的な注釈書を【 ① 】といい、後に惟宗直本が諸説を集大成した私撰の書を【 ② 】という。",
+        "answer": "① 令義解 / ② 令集解",
+        "points": 20,
+        "explanation": "833年に清原夏野らが撰上したのが『令義解』、9世紀後半に惟宗直本がまとめたのが『令集解』です。"
+      },
+      {
+        "number": 2,
+        "type": "choice",
+        "prompt": "市場経済において、少数の巨大企業が市場を支配し、価格が硬直的になる状態を何というか。",
+        "choices": [
+          "ア. 完全競争市場",
+          "イ. 寡占（かせん）市場",
+          "ウ. 独占的競争",
+          "エ. プライス・テイカー"
+        ],
+        "answer": "イ. 寡占（かせん）市場",
+        "points": 30,
+        "explanation": "少数の企業による市場支配は寡占と呼ばれ、管理価格や非価格競争が生じやすくなります。"
+      },
+      {
+        "number": 3,
+        "type": "descriptive",
+        "prompt": "オープンデータを自治体が公開・活用することの社会的メリットを、「透明性」と「防災・生活利便性」の観点から40字程度で説明せよ。",
+        "answer": "行政の透明性を高めるとともに、民間による防災や生活インフラ可視化アプリの開発を促進できる点。",
+        "points": 50,
+        "explanation": "機械判読可能なデータ公開（CKAN等）によりシビックテックや地域課題解決が進みます。"
+      }
+    ]
+  },
+  "layout_css": "\n.worksheet-wrapper {\n  max-width: 820px;\n  margin: 0 auto;\n}\n.worksheet-toolbar {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 8px;\n  margin-bottom: 20px;\n  padding: 12px;\n  border-radius: 8px;\n  background: rgba(15, 23, 42, 0.06);\n  border: 1px solid rgba(148, 163, 184, 0.3);\n}\n.worksheet-toolbar button {\n  padding: 8px 14px;\n  border-radius: 6px;\n  border: 1px solid #475569;\n  background: #ffffff;\n  color: #0f172a;\n  font-weight: 700;\n  font-size: 13px;\n  cursor: pointer;\n}\n.worksheet-toolbar button.is-active {\n  background: #1e293b;\n  color: #ffffff;\n}\n.worksheet-header-box {\n  border: 2px solid currentColor;\n  padding: 16px;\n  margin-bottom: 20px;\n  display: grid;\n  grid-template-columns: 2fr 1fr;\n  gap: 12px;\n  align-items: center;\n}\n.worksheet-name-box {\n  border-bottom: 1px solid currentColor;\n  padding: 6px 0;\n  font-size: 14px;\n}\n.worksheet-q-card {\n  border-bottom: 1px solid rgba(148, 163, 184, 0.4);\n  padding: 16px 0;\n}\n.worksheet-answer-sheet-table {\n  width: 100%;\n  border-collapse: collapse;\n  margin-top: 16px;\n}\n.worksheet-answer-sheet-table th,\n.worksheet-answer-sheet-table td {\n  border: 2px solid currentColor;\n  padding: 12px;\n  text-align: left;\n}\n.worksheet-answer-text {\n  color: #dc2626;\n  font-weight: 800;\n}\n@media print {\n  .worksheet-toolbar { display: none !important; }\n  .worksheet-wrapper { box-shadow: none !important; border: none !important; }\n}\n",
+  "html_template": "\n<div class=\"worksheet-wrapper {surface}\" id=\"worksheet-app\">\n  <!-- 画面操作用ツールバー（印刷時は自動で非表示） -->\n  <div class=\"worksheet-toolbar\">\n    <button type=\"button\" data-view-mode=\"worksheet\" class=\"is-active\">📄 授業用プリント表示</button>\n    <button type=\"button\" data-view-mode=\"answer_sheet\">📝 解答用紙のみ表示</button>\n    <button type=\"button\" id=\"toggle-answers-btn\">💡 模範解答・解説をON/OFF</button>\n    <button type=\"button\" onclick=\"window.print()\">🖨️ そのまま印刷 / PDF化</button>\n  </div>\n\n  <!-- プリントヘッダー -->\n  <header class=\"worksheet-header-box\">\n    <div>\n      <div id=\"ws-subject\" style=\"font-size:12px; font-weight:bold; opacity:0.8;\"></div>\n      <h1 id=\"ws-title\" style=\"margin:4px 0; font-size:22px;\">{title}</h1>\n    </div>\n    <div>\n      <div class=\"worksheet-name-box\">年　　組　　番　氏名：</div>\n      <div style=\"text-align:right; font-size:13px; margin-top:6px;\">得点：　　　 / <span id=\"ws-total-points\">100</span> 点</div>\n    </div>\n  </header>\n\n  <!-- 1. 授業プリント（問題＋記述欄）領域 -->\n  <main id=\"ws-questions-container\"></main>\n\n  <!-- 2. 解答用紙専用領域 -->\n  <section id=\"ws-answer-sheet-container\" style=\"display:none;\">\n    <h2 style=\"font-size:16px; margin-bottom:8px;\">【別紙】解答用紙</h2>\n    <table class=\"worksheet-answer-sheet-table\">\n      <thead>\n        <tr>\n          <th style=\"width:70px;\">問番号</th>\n          <th>解答記入欄</th>\n          <th style=\"width:80px;\">配点</th>\n        </tr>\n      </thead>\n      <tbody id=\"ws-answer-sheet-body\"></tbody>\n    </table>\n  </section>\n</div>\n"
+}

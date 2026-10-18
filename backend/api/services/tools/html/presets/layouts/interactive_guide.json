@@ -1,0 +1,34 @@
+{
+  "name": "interactive_guide",
+  "description": "ルールに沿って順番または条件達成でクリック解放されるインタラクティブ案内",
+  "script_engine": "rule_guide_engine",
+  "default_config": {
+    "mode": "sequential",
+    "completionMessage": "🎉 すべての案内ステップを確認しました！受付へお進みください。",
+    "steps": [
+      {
+        "id": "step-1",
+        "title": "STEP 1: 来場・利用ルールの確認",
+        "badge": "必須",
+        "summary": "最初にお読みください（クリックで詳細を開いて確認完了）",
+        "detail": "館内での撮影許可エリア、飲食ルール、緊急時の避難経路について確認しました。次のステップが解放されます。"
+      },
+      {
+        "id": "step-2",
+        "title": "STEP 2: 持ち物・事前準備チェック",
+        "badge": "STEP 1完了後",
+        "summary": "必要な受講票・身分証の確認",
+        "detail": "受付用QRコードと本人確認書類を手元に準備してください。確認完了により最終ステップがアンロックされます。"
+      },
+      {
+        "id": "step-3",
+        "title": "STEP 3: 入場パスの発行案内",
+        "badge": "最終確認",
+        "summary": "専用ゲートへの進み方",
+        "detail": "すべての確認が完了しました！ゲートAにて画面を提示してください。"
+      }
+    ]
+  },
+  "layout_css": "\n.guide-container {\n  max-width: 720px;\n  margin: 0 auto;\n}\n.guide-progress-bar {\n  width: 100%;\n  height: 10px;\n  background: rgba(148, 163, 184, 0.25);\n  border-radius: 999px;\n  overflow: hidden;\n  margin: 16px 0 24px;\n}\n.guide-progress-fill {\n  height: 100%;\n  width: 0%;\n  background: #2563eb;\n  transition: width 0.3s ease;\n}\n.guide-step-list {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n}\n.guide-step-card {\n  border: 2px solid rgba(148, 163, 184, 0.35);\n  border-radius: 12px;\n  padding: 16px;\n  transition: all 0.2s ease;\n  cursor: pointer;\n}\n.guide-step-card.is-locked {\n  opacity: 0.45;\n  cursor: not-allowed;\n  filter: grayscale(0.6);\n}\n.guide-step-card.is-completed {\n  border-color: #10b981;\n  background: rgba(16, 185, 129, 0.08);\n}\n.guide-step-header {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  font-weight: 800;\n}\n.guide-step-detail {\n  margin-top: 12px;\n  padding-top: 12px;\n  border-top: 1px dashed rgba(148, 163, 184, 0.4);\n  font-size: 14px;\n  line-height: 1.6;\n}\n",
+  "html_template": "\n<section class=\"guide-container {surface}\" id=\"rule-guide-app\">\n  <header style=\"display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;\">\n    <div>\n      <h1 style=\"margin:0; font-size:22px;\">🧭 {title}</h1>\n      <p style=\"margin:4px 0 0; font-size:13px; opacity:0.8;\">ルールに沿って上から順番に項目をクリックしてロックを解除してください。</p>\n    </div>\n    <button type=\"button\" id=\"guide-reset-btn\" style=\"padding:6px 12px; border-radius:6px; border:1px solid currentColor; background:transparent; color:inherit; cursor:pointer; font-size:12px;\">\n      最初からやり直す\n    </button>\n  </header>\n\n  <div class=\"guide-progress-bar\">\n    <div class=\"guide-progress-fill\" id=\"guide-progress-fill\"></div>\n  </div>\n  <div id=\"guide-status-text\" style=\"font-size:13px; font-weight:bold; margin-bottom:12px;\">進捗: 0 / 0 完了</div>\n\n  <div class=\"guide-step-list\" id=\"guide-step-list\"></div>\n</section>\n"
+}
