@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>美容院</title>
+    <style>
+      body { margin:0; background:#fff8f6; font-family: "Hiragino Kaku Gothic ProN", sans-serif; color:#2a2a2a; }
+      .container { max-width:1100px; margin:0 auto; padding:24px; }
+      .hero { background: linear-gradient(135deg,#d7829a,#f5d7dd); color:#fff; padding:50px 24px; border-radius:18px; }
+      .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:18px; }
+      .card { background:white; padding:20px; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.04); }
+      form { display:grid; gap:12px; }
+      input, select, button, textarea { width:100%; padding:12px; border-radius:10px; border:1px solid #e7dfe1; }
+      .btn { background:#a73f67; color:white; border:none; cursor:pointer; }
+      @media print { .no-print { display:none !important; } }
+    </style>
+  </head>
+  <body data-business-type="beauty" data-business-name="Rose Salon">
+    <div class="container">
+      <div class="hero no-print">
+        <h1>Rose Salon</h1>
+        <p>ヘアスタイル・ヘッドスパ・美容相談まで、あなたに合わせて丁寧に。</p>
+        <button class="btn" data-action="print">印刷</button>
+      </div>
+
+      <div class="section grid">
+        <div class="card"><h3>メニュー</h3><ul><li>カット 4,500円</li><li>カラー 8,000円</li><li>トリートメント 3,500円</li><li>ヘッドスパ 4,800円</li></ul></div>
+        <div class="card"><h3>営業時間</h3><p>火〜土 10:00〜19:00</p></div>
+        <div class="card"><h3>アクセス</h3><p>駅前サロンビル2F</p></div>
+      </div>
+
+      <div class="section card">
+        <h3>ご予約</h3>
+        <form data-reservation-form data-form-type="reservation">
+          <input name="reservation_date" type="date" required />
+          <select name="reservation_slot"></select>
+          <select name="menu">
+            <option>カット</option>
+            <option>カラー</option>
+            <option>トリートメント</option>
+            <option>ヘッドスパ</option>
+          </select>
+          <input name="name" placeholder="お名前" required />
+          <input name="tel" type="tel" placeholder="電話番号" required />
+          <button type="submit" class="btn">予約する</button>
+        </form>
+      </div>
+
+      <div class="section card">
+        <h3>お問い合わせ</h3>
+        <form data-form-type="contact" data-submit-url="/api/contact" data-success-message="ご予約のご相談を受け付けました。">
+          <input name="name" placeholder="お名前" required />
+          <input name="email" type="email" placeholder="メールアドレス" required />
+          <input name="tel" type="tel" placeholder="電話番号" required />
+          <textarea name="notes" placeholder="ご希望のスタイルやご質問" rows="5" required></textarea>
+          <button type="submit" class="btn">送信</button>
+        </form>
+      </div>
+    </div>
+
+    <script type="module" src="/backend/tools/js/index.js"></script>
+  </body>
+</html>
