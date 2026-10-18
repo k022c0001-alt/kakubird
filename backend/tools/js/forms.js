@@ -1,7 +1,7 @@
-import { onReady, qs, qsa, escapeHtml, readLocalStorage, writeLocalStorage } from './utils.js';
+import { onReady, qs, qsa, readLocalStorage, writeLocalStorage } from './utils.js';
 
 function validateField(field) {
-  const value = field.value.trim();
+  const value = (field.value || '').trim();
   const name = field.name || field.dataset.name || '項目';
   const required = field.hasAttribute('required');
   const type = field.type || 'text';
@@ -31,6 +31,10 @@ function submitForm(form, formData) {
   const successMessage = form.dataset.successMessage || '送信しました。';
 
   if (!submitUrl) {
+    const formType = form.dataset.formType || 'contact';
+    const history = readLocalStorage(`kakubird:${formType}:submissions`, []);
+    const next = [...(Array.isArray(history) ? history : []), { ...Object.fromEntries(formData.entries()), sentAt: new Date().toISOString() }];
+    writeLocalStorage(`kakubird:${formType}:submissions`, next);
     alert(successMessage);
     form.reset();
     return Promise.resolve();
@@ -46,11 +50,15 @@ function submitForm(form, formData) {
     form.reset();
   }).catch(() => {
     alert(successMessage);
+    form.reset();
   });
 }
 
 export function initForms() {
   qsa('form[data-form-type]').forEach((form) => {
+    if (form.dataset.kakubirdFormBound === 'true') return;
+    form.dataset.kakubirdFormBound = 'true';
+
     form.addEventListener('submit', (event) => {
       event.preventDefault();
       const formData = new FormData(form);

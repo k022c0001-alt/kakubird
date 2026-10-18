@@ -17,6 +17,9 @@ function updateCartBadge() {
 
 export function initShopTools() {
   qsa('[data-product-add]').forEach((button) => {
+    if (button.dataset.kakubirdBound === 'true') return;
+    button.dataset.kakubirdBound = 'true';
+
     button.addEventListener('click', () => {
       const product = {
         id: button.dataset.productId || crypto.randomUUID(),
@@ -33,6 +36,9 @@ export function initShopTools() {
   });
 
   qsa('[data-cart-clear]').forEach((button) => {
+    if (button.dataset.kakubirdBound === 'true') return;
+    button.dataset.kakubirdBound = 'true';
+
     button.addEventListener('click', () => {
       setCart([]);
       updateCartBadge();

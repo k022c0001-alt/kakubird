@@ -58,7 +58,6 @@ BACKEND_PORT = int(os.getenv("TO_BACKEND_PORT", "8765"))
 AI_MEMORY_DIR = BASE_DIR / ".ai_memory"
 AI_MEMORY_DIR.mkdir(parents=True, exist_ok=True)
 
-# ProjectBuildServiceとdownload routeが同じ絶対パスを見るための既定値。
 PROJECT_ZIP_OUTPUT_ROOT = Path(
     os.getenv("PROJECT_ZIP_OUTPUT_ROOT", str(ROOT_DIR / "generated_zips"))
 ).expanduser().resolve()
@@ -66,7 +65,6 @@ os.environ["PROJECT_ZIP_OUTPUT_ROOT"] = str(PROJECT_ZIP_OUTPUT_ROOT)
 
 app = FastAPI(title="Custom AI Server", version="3.1")
 
-# Viteの開発ポートが5174以降へずれた場合にも対応する。
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"http://(?:127\.0\.0\.1|localhost):51\d{2}",
@@ -108,7 +106,6 @@ def safe_include_router(import_path: str, router_name: str = "router") -> bool:
         return False
 
 
-# Existing application routes.
 safe_include_router("backend.api.routes_chat")
 safe_include_router("backend.api.routes_system")
 safe_include_router("backend.api.routes_memory")
@@ -116,8 +113,7 @@ safe_include_router("backend.api.routes_sql")
 safe_include_router("backend.api.routes_css")
 safe_include_router("backend.api.routes_note")
 safe_include_router("backend.api.routes_project")
-
-# ProjectBuildServiceが作成したZIPを配信する専用route。
+safe_include_router("backend.api.routes_business")
 safe_include_router("backend.api.routes_project_download")
 
 
