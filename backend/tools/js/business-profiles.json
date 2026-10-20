@@ -1,0 +1,100 @@
+{
+  "generic": {
+    "title": "{{name}} - 予約・お問い合わせ",
+    "description": "汎用のビジネス向けテンプレート",
+    "reservation": {
+      "enabled": true,
+      "slots": ["09:00","10:30","13:00","15:00","17:30"],
+      "slotDurationMinutes": 60
+    },
+    "contactFields": ["name","email","tel","message"],
+    "shopEnabled": false
+  },
+  "massage": {
+    "title": "{{name}} - リラクゼーションサロン 予約",
+    "description": "マッサージ・リラクゼーション店舗向け",
+    "reservation": {
+      "enabled": true,
+      "slots": ["10:00","11:30","13:30","15:00","16:30","18:00"],
+      "slotDurationMinutes": 60
+    },
+    "contactFields": ["name","tel","email","notes"],
+    "shopEnabled": false
+  },
+  "cafe": {
+    "title": "{{name}} - カフェ メニュー & 予約",
+    "description": "カフェ・飲食店向け",
+    "reservation": {
+      "enabled": true,
+      "slots": ["09:00","10:00","11:00","12:00","13:00","14:00","15:00"],
+      "slotDurationMinutes": 60
+    },
+    "contactFields": ["name","email","tel","notes"],
+    "shopEnabled": true
+  },
+  "bookstore": {
+    "title": "{{name}} - 本屋へようこそ",
+    "description": "書店向け（入荷・在庫表示・注文）",
+    "reservation": { "enabled": false, "slots": [], "slotDurationMinutes": 0 },
+    "contactFields": ["name","email","message"],
+    "shopEnabled": true
+  },
+  "rental": {
+    "title": "{{name}} - 中古・レンタル商品",
+    "description": "中古販売・レンタル向け",
+    "reservation": { "enabled": false, "slots": [], "slotDurationMinutes": 0 },
+    "contactFields": ["name","email","tel","message"],
+    "shopEnabled": true
+  },
+  "beauty": {
+    "title": "{{name}} - 美容院 / サロン 予約",
+    "description": "美容室・ヘアサロン向け",
+    "reservation": {
+      "enabled": true,
+      "slots": ["09:00","10:30","12:00","13:30","15:00","16:30","18:00"],
+      "slotDurationMinutes": 90
+    },
+    "contactFields": ["name","tel","email","menu"],
+    "shopEnabled": false
+  },
+  "school": {
+    "title": "{{name}} - 塾 予約・お問い合わせ",
+    "description": "学習塾・スクール向け",
+    "reservation": {
+      "enabled": true,
+      "slots": ["16:00","17:30","19:00","20:30"],
+      "slotDurationMinutes": 90
+    },
+    "contactFields": ["name","email","tel","student_age","message"],
+    "shopEnabled": false
+  },
+  "bar": {
+    "title": "{{name}} - バー 予約・イベント",
+    "description": "バー・ナイトスポット向け",
+    "reservation": {
+      "enabled": true,
+      "slots": ["18:00","19:30","21:00","22:30"],
+      "slotDurationMinutes": 90
+    },
+    "contactFields": ["name","tel","email","notes"],
+    "shopEnabled": false
+  },
+  "medical": {
+    "title": "{{name}} - 医療機関 予約",
+    "description": "診療予約・問診フォーム対応",
+    "reservation": {
+      "enabled": true,
+      "slots": ["09:00","09:30","10:00","10:30","11:00","11:30","14:00","14:30","15:00"],
+      "slotDurationMinutes": 30
+    },
+    "contactFields": ["name","tel","email","birthdate","symptoms"],
+    "shopEnabled": false
+  },
+  "landlord": {
+    "title": "{{name}} - 大家・不動産お問い合わせ",
+    "description": "大家さん向けの問い合わせ・募集フォーム",
+    "reservation": { "enabled": false, "slots": [], "slotDurationMinutes": 0 },
+    "contactFields": ["name","email","tel","property_id","message"],
+    "shopEnabled": false
+  }
+}

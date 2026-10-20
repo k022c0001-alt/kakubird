@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Beauty & Bloom</title>
+    <style>
+      :root {
+        --bg: #fff7f7;
+        --panel: #fffdfd;
+        --accent: #c97a8e;
+        --accent-dark: #8b4a5a;
+        --text: #2f2326;
+        --muted: #7a676d;
+        --line: #f4dfe3;
+        --gold: #d8b66d;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .hero {
+        background: linear-gradient(135deg, #8b4a5a, #d9a4aa);
+        color: white;
+        border-radius: 24px;
+        padding: 48px 28px;
+        box-shadow: 0 18px 30px rgba(139, 74, 90, 0.12);
+      }
+
+      .hero h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2.3rem, 5vw, 4rem);
+      }
+
+      .hero p {
+        margin: 0;
+        color: rgba(255,255,255,0.9);
+        max-width: 760px;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .btn {
+        appearance: none;
+        border: none;
+        border-radius: 999px;
+        padding: 12px 18px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .btn.primary {
+        background: white;
+        color: var(--accent-dark);
+      }
+
+      .btn.secondary {
+        background: rgba(255,255,255,0.18);
+        border: 1px solid rgba(255,255,255,0.4);
+        color: white;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 18px;
+        margin-top: 26px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 12px 22px rgba(70, 40, 45, 0.04);
+      }
+
+      .card h3 {
+        margin-top: 0;
+        margin-bottom: 14px;
+      }
+
+      .list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 8px;
+      }
+
+      .two-column {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 20px;
+        margin-top: 26px;
+      }
+
+      form {
+        display: grid;
+        gap: 12px;
+      }
+
+      label {
+        display: grid;
+        gap: 8px;
+        font-weight: 600;
+      }
+
+      input, select, textarea {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: white;
+        padding: 12px 14px;
+        font: inherit;
+        color: var(--text);
+      }
+
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th, td {
+        border: 1px solid var(--line);
+        text-align: left;
+        padding: 10px 12px;
+      }
+
+      .highlight {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--accent-dark);
+      }
+
+      .small {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      @media (max-width: 760px) {
+        .two-column {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media print {
+        .no-print { display: none !important; }
+      }
+    </style>
+  </head>
+  <body data-business-type="beauty" data-business-name="Beauty & Bloom">
+    <div class="container">
+      <header class="hero">
+        <div class="toolbar no-print">
+          <button class="btn secondary" data-action="print">印刷</button>
+          <button class="btn secondary" data-export-target="#service-table" data-export-type="csv" data-filename="beauty-menu.csv">CSV出力</button>
+        </div>
+        <h1>Beauty &amp; Bloom</h1>
+        <p>自然な美しさを引き出す美容室。ヘアカット、カラー、トリートメント、フェイシャルで、今日の自分に合う変化を。</p>
+      </header>
+
+      <section class="grid">
+        <article class="card">
+          <h3>人気メニュー</h3>
+          <div class="list">
+            <div class="row"><span>カット</span><strong>6,800円</strong></div>
+            <div class="row"><span>カラー</span><strong>11,000円</strong></div>
+            <div class="row"><span>トリートメント</span><strong>7,500円</strong></div>
+            <div class="row"><span>フェイシャル</span><strong>9,800円</strong></div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h3>営業時間</h3>
+          <p>平日 10:00 - 20:00</p>
+          <p>土曜 9:00 - 18:00</p>
+          <p>日曜 10:00 - 15:00</p>
+          <p class="small">完全予約制 / お子様連れOK</p>
+        </article>
+
+        <article class="card">
+          <h3>スタッフのこだわり</h3>
+          <p>顔立ちや髪質に合わせたデザイン</p>
+          <p>髪と肌のケアを同時に</p>
+          <p>初回カウンセリングを丁寧に</p>
+        </article>
+      </section>
+
+      <section class="two-column">
+        <article class="card">
+          <h3>予約フォーム</h3>
+          <form data-reservation-form data-form-type="reservation">
+            <label>
+              予約日
+              <input name="reservation_date" type="date" required />
+            </label>
+            <label>
+              時間帯
+              <select name="reservation_slot" required></select>
+            </label>
+            <label>
+              メニュー
+              <select name="service">
+                <option>カット</option>
+                <option>カラー</option>
+                <option>トリートメント</option>
+                <option>フェイシャル</option>
+              </select>
+            </label>
+            <label>
+              お名前
+              <input name="name" placeholder="例：山田 美咲" required />
+            </label>
+            <label>
+              電話番号
+              <input name="tel" type="tel" placeholder="例：090-1234-5678" required />
+            </label>
+            <button type="submit" class="btn primary">予約する</button>
+          </form>
+        </article>
+
+        <aside class="card">
+          <h3>今月の特典</h3>
+          <div class="highlight">初回限定 10%OFF</div>
+          <p class="small">ヘアケア相談付きで、あなたに合う施術を提案します。</p>
+          <p>※詳細はご予約時にお伝えします。</p>
+        </aside>
+      </section>
+
+      <section class="card" style="margin-top: 26px;">
+        <h3>サービス一覧</h3>
+        <table id="service-table">
+          <thead>
+            <tr>
+              <th>メニュー</th>
+              <th>所要時間</th>
+              <th>料金</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>カット</td>
+              <td>45分</td>
+              <td>6,800円</td>
+            </tr>
+            <tr>
+              <td>カラー</td>
+              <td>75分</td>
+              <td>11,000円</td>
+            </tr>
+            <tr>
+              <td>トリートメント</td>
+              <td>30分</td>
+              <td>7,500円</td>
+            </tr>
+            <tr>
+              <td>フェイシャル</td>
+              <td>60分</td>
+              <td>9,800円</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card" style="margin-top: 26px;">
+        <h3>お問い合わせ</h3>
+        <form data-form-type="contact" data-submit-url="/api/contact" data-success-message="お問い合わせを受け付けました。">
+          <label>
+            お名前
+            <input name="name" placeholder="例：田中 里奈" required />
+          </label>
+          <label>
+            メールアドレス
+            <input name="email" type="email" placeholder="例：hello@example.com" required />
+          </label>
+          <label>
+            電話番号
+            <input name="tel" type="tel" placeholder="例：090-1234-5678" required />
+          </label>
+          <label>
+            ご要望
+            <textarea name="notes" placeholder="希望のスタイルやご相談内容を入力してください" required></textarea>
+          </label>
+          <button type="submit" class="btn primary">送信する</button>
+        </form>
+      </section>
+    </div>
+
+    <script type="module" src="/backend/tools/js/index.js"></script>
+  </body>
+</html>

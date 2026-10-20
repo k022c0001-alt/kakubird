@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>マッサージ店</title>
+    <style>
+      body {
+        font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", sans-serif;
+        margin: 0;
+        background: #f7f3ef;
+        color: #2a2a2a;
+      }
+      .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+      .hero { background: linear-gradient(135deg, #b98665, #f4d2be); color: white; padding: 56px 24px; border-radius: 20px; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
+      .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+      .btn { display:inline-block; padding: 12px 18px; background:#2f6f5f; color:white; border:none; border-radius: 999px; cursor:pointer; }
+      .btn.secondary { background:#d8b59a; color:#3e2d21; }
+      form { display:grid; gap:12px; }
+      input, select, textarea { width:100%; padding: 12px; border-radius: 10px; border:1px solid #d8d6d3; }
+      .section { margin-top: 32px; }
+      @media print {
+        .no-print { display:none !important; }
+      }
+    </style>
+  </head>
+  <body data-business-type="massage" data-business-name="ゆらぎの森マッサージ">
+    <div class="container">
+      <div class="hero">
+        <div class="no-print"><button class="btn" data-action="print">このページを印刷</button></div>
+        <h1>ゆらぎの森マッサージ</h1>
+        <p>肩こり・腰痛・疲労回復のためのリラクゼーションサロン</p>
+      </div>
+
+      <div class="section grid">
+        <div class="card">
+          <h3>おすすめメニュー</h3>
+          <ul>
+            <li>全身マッサージ 60分</li>
+            <li>肩甲骨ほぐし 45分</li>
+            <li>足裏リフレッシュ 30分</li>
+            <li>デトックスコース 90分</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>営業時間</h3>
+          <p>平日 10:00〜20:00<br />土日 9:00〜18:00</p>
+        </div>
+        <div class="card">
+          <h3>アクセス</h3>
+          <p>駅前徒歩3分</p>
+        </div>
+      </div>
+
+      <div class="section card">
+        <h3>予約フォーム</h3>
+        <form data-reservation-form data-form-type="reservation">
+          <label>予約日<input name="reservation_date" type="date" required /></label>
+          <label>時間帯<select name="reservation_slot"></select></label>
+          <label>施術メニュー<select name="menu">
+            <option>全身マッサージ</option>
+            <option>肩甲骨ほぐし</option>
+            <option>足裏リフレッシュ</option>
+            <option>デトックスコース</option>
+          </select></label>
+          <label>名前<input name="name" required /></label>
+          <label>電話番号<input name="tel" type="tel" required /></label>
+          <button type="submit" class="btn">予約を確定</button>
+        </form>
+      </div>
+
+      <div class="section card">
+        <h3>お問い合わせ</h3>
+        <form data-form-type="contact" data-submit-url="/api/contact" data-success-message="お問い合わせを受け付けました。">
+          <input name="name" placeholder="お名前" required />
+          <input name="email" type="email" placeholder="メールアドレス" required />
+          <input name="tel" type="tel" placeholder="電話番号" required />
+          <textarea name="notes" placeholder="ご希望やご質問" rows="5" required></textarea>
+          <button type="submit" class="btn secondary">送信する</button>
+        </form>
+      </div>
+    </div>
+
+    <script type="module" src="/backend/tools/js/index.js"></script>
+  </body>
+</html>
